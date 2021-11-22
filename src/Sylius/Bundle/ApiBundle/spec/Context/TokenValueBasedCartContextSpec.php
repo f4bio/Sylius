@@ -43,7 +43,7 @@ final class TokenValueBasedCartContextSpec extends ObjectBehavior
         $request->attributes = new ParameterBag(['tokenValue' => 'TOKEN_VALUE']);
         $request->getRequestUri()->willReturn('/api/v2/orders/TOKEN_VALUE');
 
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
         $orderRepository->findCartByTokenValue('TOKEN_VALUE')->willReturn($cart);
 
         $this->getCart()->shouldReturn($cart);
@@ -51,7 +51,7 @@ final class TokenValueBasedCartContextSpec extends ObjectBehavior
 
     function it_throws_an_exception_if_there_is_no_master_request_on_request_stack(RequestStack $requestStack): void
     {
-        $requestStack->getMasterRequest()->willReturn(null);
+        $requestStack->getMainRequest()->willReturn(null);
 
         $this
             ->shouldThrow(new CartNotFoundException('There is no master request on request stack.'))
@@ -66,7 +66,7 @@ final class TokenValueBasedCartContextSpec extends ObjectBehavior
         $request->attributes = new ParameterBag([]);
         $request->getRequestUri()->willReturn('/orders');
 
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $this
             ->shouldThrow(new CartNotFoundException('The master request is not an API request.'))
@@ -81,7 +81,7 @@ final class TokenValueBasedCartContextSpec extends ObjectBehavior
         $request->attributes = new ParameterBag([]);
         $request->getRequestUri()->willReturn('/api/v2/orders');
 
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $this
             ->shouldThrow(new CartNotFoundException('Sylius was not able to find the cart, as there is no passed token value.'))
@@ -97,7 +97,7 @@ final class TokenValueBasedCartContextSpec extends ObjectBehavior
         $request->attributes = new ParameterBag(['tokenValue' => 'TOKEN_VALUE']);
         $request->getRequestUri()->willReturn('/api/v2/orders/TOKEN_VALUE');
 
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
         $orderRepository->findCartByTokenValue('TOKEN_VALUE')->willReturn(null);
 
         $this

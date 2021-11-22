@@ -32,7 +32,7 @@ final class RequestBasedLocaleContext implements LocaleContextInterface
 
     public function getLocaleCode(): string
     {
-        $request = $this->requestStack->getMasterRequest();
+        $request = $this->requestStack->getMainRequest();
         if (null === $request) {
             throw new LocaleNotFoundException('No master request available.');
         }

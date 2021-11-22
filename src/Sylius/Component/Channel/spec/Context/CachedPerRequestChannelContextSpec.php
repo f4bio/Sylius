@@ -38,7 +38,7 @@ final class CachedPerRequestChannelContextSpec extends ObjectBehavior
         Request $request,
         ChannelInterface $channel
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request, $request);
+        $requestStack->getMainRequest()->willReturn($request, $request);
 
         $decoratedChannelContext->getChannel()->willReturn($channel)->shouldBeCalledTimes(1);
 
@@ -54,7 +54,7 @@ final class CachedPerRequestChannelContextSpec extends ObjectBehavior
         ChannelInterface $firstChannel,
         ChannelInterface $secondChannel
     ): void {
-        $requestStack->getMasterRequest()->willReturn($firstRequest, $secondRequest);
+        $requestStack->getMainRequest()->willReturn($firstRequest, $secondRequest);
 
         $decoratedChannelContext->getChannel()->willReturn($firstChannel, $secondChannel);
 
@@ -70,7 +70,7 @@ final class CachedPerRequestChannelContextSpec extends ObjectBehavior
         ChannelInterface $firstChannel,
         ChannelInterface $secondChannel
     ): void {
-        $requestStack->getMasterRequest()->willReturn($firstRequest, $secondRequest, $firstRequest);
+        $requestStack->getMainRequest()->willReturn($firstRequest, $secondRequest, $firstRequest);
 
         $decoratedChannelContext->getChannel()->willReturn($firstChannel, $secondChannel)->shouldBeCalledTimes(2);
 
@@ -85,7 +85,7 @@ final class CachedPerRequestChannelContextSpec extends ObjectBehavior
         ChannelInterface $firstChannel,
         ChannelInterface $secondChannel
     ): void {
-        $requestStack->getMasterRequest()->willReturn(null, null);
+        $requestStack->getMainRequest()->willReturn(null, null);
 
         $decoratedChannelContext->getChannel()->willReturn($firstChannel, $secondChannel)->shouldBeCalledTimes(2);
 
@@ -98,7 +98,7 @@ final class CachedPerRequestChannelContextSpec extends ObjectBehavior
         RequestStack $requestStack,
         Request $request
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request, $request);
+        $requestStack->getMainRequest()->willReturn($request, $request);
 
         $decoratedChannelContext->getChannel()->willThrow(ChannelNotFoundException::class)->shouldBeCalledTimes(1);
 
@@ -111,7 +111,7 @@ final class CachedPerRequestChannelContextSpec extends ObjectBehavior
         RequestStack $requestStack,
         ChannelInterface $channel
     ): void {
-        $requestStack->getMasterRequest()->willReturn(null, null);
+        $requestStack->getMainRequest()->willReturn(null, null);
 
         $decoratedChannelContext
             ->getChannel()

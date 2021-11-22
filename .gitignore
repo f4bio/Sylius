@@ -3,7 +3,6 @@
 /public/css
 /public/js
 /public/media
-/public/build
 !/public/media/image/.gitkeep
 
 /app/config/parameters.yml
@@ -51,3 +50,14 @@
 /config/jwt/*.pem
 !/config/jwt/*-test.pem
 ###< lexik/jwt-authentication-bundle ###
+/.idea/
+/docker/mysql/auto.cnf
+/docker/mysql/ca-key.pem
+/docker/mysql/client-key.pem
+/docker/mysql/ib_buffer_pool
+/docker/mysql/ib_logfile0
+/docker/mysql/ib_logfile1
+/docker/mysql/ibdata1
+/docker/mysql/ibtmp1
+/docker/mysql/private_key.pem
+/docker/mysql/server-key.pem

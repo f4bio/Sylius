@@ -45,7 +45,7 @@ final class FakeChannelContextSpec extends ObjectBehavior
         Request $request,
         ChannelInterface $channel
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $fakeChannelCodeProvider->getCode($request)->willReturn('CHANNEL_CODE');
 
@@ -56,7 +56,7 @@ final class FakeChannelContextSpec extends ObjectBehavior
 
     function it_throws_a_channel_not_found_exception_if_there_is_no_master_request(RequestStack $requestStack): void
     {
-        $requestStack->getMasterRequest()->willReturn(null);
+        $requestStack->getMainRequest()->willReturn(null);
 
         $this->shouldThrow(ChannelNotFoundException::class)->during('getChannel');
     }
@@ -67,7 +67,7 @@ final class FakeChannelContextSpec extends ObjectBehavior
         RequestStack $requestStack,
         Request $request
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $fakeChannelCodeProvider->getCode($request)->willReturn(null);
 
@@ -82,7 +82,7 @@ final class FakeChannelContextSpec extends ObjectBehavior
         RequestStack $requestStack,
         Request $request
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $fakeChannelCodeProvider->getCode($request)->willReturn('CHANNEL_CODE');
 
