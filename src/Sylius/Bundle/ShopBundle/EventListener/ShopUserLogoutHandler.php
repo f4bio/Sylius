@@ -17,10 +17,10 @@ use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Core\Storage\CartStorageInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Http\EventListener\DefaultLogoutListener;
 use Symfony\Component\Security\Http\HttpUtils;
-use Symfony\Component\Security\Http\Logout\DefaultLogoutSuccessHandler;
 
-final class ShopUserLogoutHandler extends DefaultLogoutSuccessHandler
+final class ShopUserLogoutHandler extends DefaultLogoutListener
 {
     /** @var ChannelContextInterface */
     private $channelContext;

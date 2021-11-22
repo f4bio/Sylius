@@ -67,7 +67,7 @@ final class NonChannelLocaleListenerSpec extends ObjectBehavior
         FirewallMap $firewallMap,
         RequestEvent $event
     ): void {
-        $event->isMasterRequest()->willReturn(false);
+        $event->isMainRequest()->willReturn(false);
 
         $event->getRequest()->shouldNotBeCalled();
         $firewallMap->getFirewallConfig(Argument::any())->shouldNotBeCalled();
@@ -85,7 +85,7 @@ final class NonChannelLocaleListenerSpec extends ObjectBehavior
         Request $request,
         RequestEvent $event
     ): void {
-        $event->isMasterRequest()->willReturn(true);
+        $event->isMainRequest()->willReturn(true);
         $event->getRequest()->willReturn($request);
         $firewallMap->getFirewallConfig($request)->willReturn(null);
 
@@ -103,7 +103,7 @@ final class NonChannelLocaleListenerSpec extends ObjectBehavior
         Request $request,
         RequestEvent $event
     ): void {
-        $event->isMasterRequest()->willReturn(true);
+        $event->isMainRequest()->willReturn(true);
         $event->getRequest()->willReturn($request);
         $firewallMap->getFirewallConfig($request)->willReturn(
             new FirewallConfig('lalaland', 'mock')
@@ -123,7 +123,7 @@ final class NonChannelLocaleListenerSpec extends ObjectBehavior
         Request $request,
         RequestEvent $event
     ): void {
-        $event->isMasterRequest()->willReturn(true);
+        $event->isMainRequest()->willReturn(true);
         $event->getRequest()->willReturn($request);
         $firewallMap->getFirewallConfig($request)->willReturn(
             new FirewallConfig('shop', 'mock')
@@ -145,7 +145,7 @@ final class NonChannelLocaleListenerSpec extends ObjectBehavior
         Request $request,
         RequestEvent $event
     ): void {
-        $event->isMasterRequest()->willReturn(true);
+        $event->isMainRequest()->willReturn(true);
         $event->getRequest()->willReturn($request);
         $firewallMap->getFirewallConfig($request)->willReturn(
             new FirewallConfig('shop', 'mock')
@@ -175,7 +175,7 @@ final class NonChannelLocaleListenerSpec extends ObjectBehavior
         RequestEvent $event,
         Router $router
     ): void {
-        $event->isMasterRequest()->willReturn(true);
+        $event->isMainRequest()->willReturn(true);
         $event->getRequest()->willReturn($request);
         $firewallMap->getFirewallConfig($request)->willReturn(
             new FirewallConfig('shop', 'mock')

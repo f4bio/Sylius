@@ -50,7 +50,7 @@ final class ResourceDeleteSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (!$event->isMasterRequest() || 'html' !== $event->getRequest()->getRequestFormat()) {
+        if (!$event->isMainRequest() || 'html' !== $event->getRequest()->getRequestFormat()) {
             return;
         }
 

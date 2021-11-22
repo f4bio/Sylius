@@ -19,9 +19,9 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Storage\CartStorageInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Http\Event\LogoutEvent;
+use Symfony\Component\Security\Http\EventListener\DefaultLogoutListener;
 use Symfony\Component\Security\Http\HttpUtils;
-use Symfony\Component\Security\Http\Logout\DefaultLogoutSuccessHandler;
-use Symfony\Component\Security\Http\Logout\LogoutSuccessHandlerInterface;
 
 final class ShopUserLogoutHandlerSpec extends ObjectBehavior
 {
@@ -35,12 +35,12 @@ final class ShopUserLogoutHandlerSpec extends ObjectBehavior
 
     function it_is_default_logout_success_handler(): void
     {
-        $this->shouldHaveType(DefaultLogoutSuccessHandler::class);
+        $this->shouldHaveType(DefaultLogoutListener::class);
     }
 
     function it_implements_logout_success_handler_interface(): void
     {
-        $this->shouldImplement(LogoutSuccessHandlerInterface::class);
+        $this->shouldImplement(LogoutEvent::class);
     }
 
     function it_clears_cart_session_after_logging_out_and_return_default_handler_response(

@@ -59,7 +59,7 @@ final class NonChannelLocaleListener
      */
     public function restrictRequestLocale(RequestEvent $event): void
     {
-        if (!$event->isMasterRequest()) {
+        if (!$event->isMainRequest()) {
             return;
         }
 
