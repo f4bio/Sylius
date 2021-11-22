@@ -189,7 +189,7 @@
         "phpspec/phpspec": "^7.0",
         "phpstan/phpstan": "0.12.96",
         "phpstan/phpstan-doctrine": "0.12.33",
-        "phpunit/phpunit": "^8.5",
+        "phpunit/phpunit": "^9.5",
         "polishsymfonycommunity/symfony-mocker-container": "^1.0",
         "psalm/plugin-mockery": "0.7.0",
         "psr/event-dispatcher": "^1.0",
