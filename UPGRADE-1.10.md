@@ -1,55 +1,38 @@
-# UPGRADE FROM `v1.10.0` TO `v1.10.1`
-
-1. API is disabled by default, to enable it you need to set flag to ``true`` in ``config/packages/_sylius.yaml``:
-
-    ```yaml
-    sylius_api:
-        enabled: true
-    ```
-
 # UPGRADE FROM `v1.9.X` TO `v1.10.0`
 
-### Admin API Bundle Removal
+### New API
 
-Sylius v1.10 extracts AdminApiBundle outside the core package. You might choose either to keep that bundle or remove it in case it's not used.
+1. API CartShippingMethod key `cost` has been changed to `price`.
 
-#### Keeping Admin API Bundle
+### From Gulp to Webpack Encore
 
-1. Add Admin API Bundle to your application by running the following command:
-
-```
-composer require sylius/admin-api-bundle
-```
-
-#### Removing Admin API Bundle
-
-1. **Before installing Sylius 1.10**, run the following command to adjust the database schema:
+After migrating to the Webpack, asset paths should be changed. By default, it will be compiled to the `public/build/admin/...` and `public/build/shop/...` folder:
 
 ```
-bin/console doctrine:migrations:execute Sylius\\Bundle\\AdminApiBundle\\Migrations\\Version20161202011556 Sylius\\Bundle\\AdminApiBundle\\Migrations\\Version20170313125424 Sylius\\Bundle\\AdminApiBundle\\Migrations\\Version20170711151342 --down
+- <img src="{{ asset('assets/admin/img/admin-logo.svg') }}" class="ui fluid image">
++ <img src="{{ asset('build/admin/images/admin-logo.svg', 'admin') }}" class="ui fluid image">
 ```
 
-1. After installing Sylius v1.10, remove the remaining configuration by following the changes in [this PR](https://github.com/Sylius/Sylius-Standard/pull/543/files):
+Output paths can be changed freely, but keep in mind, that before every build, the directory will be cleared, so old files may be removed.
 
-- remove `friendsofsymfony/oauth-server-bundle` from your `composer.json` and run `composer update`
-- remove `FOS\OAuthServerBundle\FOSOAuthServerBundle` and `Sylius\Bundle\AdminApiBundle\SyliusAdminApiBundle` from `config/bundles.php`
-- remove `@SyliusAdminApiBundle/Resources/config/app/config.yml` import from `config/packages/_sylius.yaml`
-- remove `sylius_admin_api` package configuration from `config/packages/_sylius.yaml`
-- remove `oauth_token` and `api` firewalls from `config/security.yaml`
-- remove `sylius.security.api_regex` parameter and all its usage in access control from `config/security.yaml`
-- remove `config/routes/sylius_admin_api.yaml` file
-- remove all classes from `src/Entity/AdminApi` directory
+Scripts and styles paths have also changed:
 
-### Buses
+```
+- {% include '@SyliusUi/_javascripts.html.twig' with {'path': 'assets/admin/js/app.js'} %}
++ {{ encore_entry_script_tags('admin-entry', null, 'admin') }}
+```
 
-1. Message buses `sylius_default.bus` and `sylius_event.bus` has been deprecated. Use `sylius.command_bus` and `sylius.event_bus` instead.
+```
+- {% include '@SyliusUi/_stylesheets.html.twig' with {'path': 'assets/admin/css/style.css'} %}
++ {{ encore_entry_link_tags('admin-entry', null, 'admin') }}
+```
 
-### Shop & Core Decoupled
+```
+- {% include '@SyliusUi/_javascripts.html.twig' with {'path': 'assets/shop/js/app.js'} %}
++ {{ encore_entry_script_tags('shop-entry', null, 'shop') }}
+```
 
-1. `Sylius\Bundle\CoreBundle\EventListener\CartBlamerListener` has been moved from CoreBundle to ShopBundle, renamed to `Sylius\Bundle\ShopBundle\EventListener\ShopCartBlamerListener` and adjusted to work properly when decoupled.
-
-1. `Sylius\Bundle\CoreBundle\EventListener\UserCartRecalculationListener` has been moved from CoreBundle to ShopBundle as `Sylius\Bundle\ShopBundle\EventListener\UserCartRecalculationListener` and adjusted to work properly when decoupled.
-
-### API v2
-
-For changes according to the API v2, please visit [API v2 upgrade file](UPGRADE-API-1.10.md).
+```
+- {% include '@SyliusUi/_stylesheets.html.twig' with {'path': 'assets/shop/css/style.css'} %}
++ {{ encore_entry_link_tags('shop-entry', null, 'shop') }}
+```

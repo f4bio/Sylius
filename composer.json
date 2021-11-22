@@ -1,7 +1,6 @@
 {
     "name": "sylius/sylius",
     "type": "library",
-    "version": "v1.11.0-dev",
     "description": "E-Commerce platform for PHP, based on Symfony framework.",
     "homepage": "https://sylius.com",
     "license": "MIT",
@@ -20,7 +19,7 @@
         }
     ],
     "require": {
-        "php": "^7.4 || ^8.0",
+        "php": "^8.0",
         "ext-exif": "*",
         "ext-fileinfo": "*",
         "ext-gd": "*",
