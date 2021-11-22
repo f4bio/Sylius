@@ -49,7 +49,7 @@ final class ResendOrderConfirmationEmailAction
 
     public function __invoke(Request $request): Response
     {
-        $orderId = $request->attributes->get('id');
+        $orderId = $request->attributes->get('orderId');
 
         if (!$this->csrfTokenManager->isTokenValid(new CsrfToken($orderId, (string) $request->query->get('_csrf_token')))) {
             throw new HttpException(Response::HTTP_FORBIDDEN, 'Invalid csrf token.');
