@@ -51,7 +51,7 @@ final class ChannelContext implements ChannelContextInterface
 
     private function getMasterRequest(): Request
     {
-        $masterRequest = $this->requestStack->getMasterRequest();
+        $masterRequest = $this->requestStack->getMainRequest();
         if (null === $masterRequest) {
             throw new \UnexpectedValueException('There are not any requests on request stack');
         }

@@ -13,19 +13,16 @@
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/ChannelBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\ChannelBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/CoreBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\CoreBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/CurrencyBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\CurrencyBundle\" />
-      <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/CustomerBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\CustomerBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/InventoryBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\InventoryBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/LocaleBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\LocaleBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/MoneyBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\MoneyBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/OrderBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\OrderBundle\" />
-      <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/PaymentBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\PaymentBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/PayumBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\PayumBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/ProductBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\ProductBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/PromotionBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\PromotionBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/ReviewBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\ReviewBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/ShopBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\ShopBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/TaxationBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\TaxationBundle\" />
-      <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/TaxonomyBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\TaxonomyBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/UiBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\UiBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Bundle/UserBundle/spec" isTestSource="true" packagePrefix="spec\Sylius\Bundle\UserBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Component" isTestSource="false" packagePrefix="Sylius\Component\" />
@@ -47,6 +44,10 @@
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Component/Taxonomy/spec" isTestSource="true" packagePrefix="spec\Sylius\Component\Taxonomy\" />
       <sourceFolder url="file://$MODULE_DIR$/src/Sylius/Component/User/spec" isTestSource="true" packagePrefix="spec\Sylius\Component\User\" />
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" packagePrefix="Sylius\Tests\" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/debug-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/web-profiler-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/swiftmailer-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/thanks" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

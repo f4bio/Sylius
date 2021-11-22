@@ -35,7 +35,7 @@ final class RequestBasedLocaleContextSpec extends ObjectBehavior
 
     function it_throws_locale_not_found_exception_if_master_request_is_not_found(RequestStack $requestStack): void
     {
-        $requestStack->getMasterRequest()->willReturn(null);
+        $requestStack->getMainRequest()->willReturn(null);
 
         $this->shouldThrow(LocaleNotFoundException::class)->during('getLocaleCode');
     }
@@ -44,7 +44,7 @@ final class RequestBasedLocaleContextSpec extends ObjectBehavior
         RequestStack $requestStack,
         Request $request
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $request->attributes = new ParameterBag();
 
@@ -56,7 +56,7 @@ final class RequestBasedLocaleContextSpec extends ObjectBehavior
         LocaleProviderInterface $localeProvider,
         Request $request
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $request->attributes = new ParameterBag(['_locale' => 'en_US']);
 
@@ -70,7 +70,7 @@ final class RequestBasedLocaleContextSpec extends ObjectBehavior
         LocaleProviderInterface $localeProvider,
         Request $request
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $request->attributes = new ParameterBag(['_locale' => 'pl_PL']);
 
