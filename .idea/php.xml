@@ -258,6 +258,7 @@
       <path value="$PROJECT_DIR$/vendor/symfony/web-profiler-bundle" />
       <path value="$PROJECT_DIR$/vendor/symfony/swiftmailer-bundle" />
       <path value="$PROJECT_DIR$/vendor/symfony/thanks" />
+      <path value="$PROJECT_DIR$/vendor/nelmio/cors-bundle" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.0">
