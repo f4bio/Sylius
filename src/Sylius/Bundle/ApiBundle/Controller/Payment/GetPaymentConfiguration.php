@@ -23,22 +23,19 @@ use Webmozart\Assert\Assert;
 /** @experimental */
 final class GetPaymentConfiguration
 {
-    private PaymentRepositoryInterface $paymentRepository;
-
-    private CompositePaymentConfigurationProviderInterface $compositePaymentConfigurationProvider;
-
     public function __construct(
-        PaymentRepositoryInterface $paymentRepository,
-        CompositePaymentConfigurationProviderInterface $compositePaymentConfigurationProvider
+        private PaymentRepositoryInterface $paymentRepository,
+        private CompositePaymentConfigurationProviderInterface $compositePaymentConfigurationProvider
     ) {
-        $this->paymentRepository = $paymentRepository;
-        $this->compositePaymentConfigurationProvider = $compositePaymentConfigurationProvider;
     }
 
     public function __invoke(Request $request): JsonResponse
     {
         /** @var PaymentInterface|null $payment */
-        $payment = $this->paymentRepository->findOneByOrderToken($request->get('paymentId'), $request->get('id'));
+        $payment = $this->paymentRepository->findOneByOrderToken(
+            $request->attributes->get('paymentId'),
+            $request->attributes->get('id')
+        );
 
         Assert::notNull($payment);
 

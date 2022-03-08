@@ -99,7 +99,6 @@ final class ManagingProductsContext implements Context
 
     /**
      * @When I want to create a new configurable product
-     * @When I want to create a new simple product
      */
     public function iWantToCreateANewConfigurableProduct(): void
     {
@@ -127,26 +126,6 @@ final class ManagingProductsContext implements Context
         if ($name !== null) {
             $data['translations'][$localeCode]['name'] = $name;
         }
-
-        $this->client->updateRequestData($data);
-    }
-
-    /**
-     * @When /^I set its(?:| default) price to "(?:€|£|\$)([^"]+)" for ("[^"]+" channel)$/
-     */
-    public function iSetItsPriceTo(string $price, ChannelInterface $channel): void
-    {
-        $localeCode = $channel->getLocales()->first()->getCode();
-
-        $data = [
-            'translations' => [
-                $localeCode => [
-                    'locale' => $localeCode,
-                    'price' => $price,
-                ],
-            ],
-            'channel' => $this->iriConverter->getIriFromItem($channel),
-        ];
 
         $this->client->updateRequestData($data);
     }

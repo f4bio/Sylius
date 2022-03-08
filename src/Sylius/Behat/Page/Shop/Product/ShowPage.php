@@ -20,7 +20,6 @@ use Behat\Mink\Session;
 use DMore\ChromeDriver\ChromeDriver;
 use FriendsOfBehat\PageObjectExtension\Page\SymfonyPage;
 use FriendsOfBehat\PageObjectExtension\Page\UnexpectedPageException;
-use PhpSpec\Exception\Example\PendingException;
 use Sylius\Behat\Page\Shop\Cart\SummaryPageInterface;
 use Sylius\Behat\Service\JQueryHelper;
 use Sylius\Component\Product\Model\ProductInterface;
@@ -124,7 +123,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
 
     public function hasCatalogPromotionApplied(string $name): bool
     {
-        $catalogPromotions = $this->getDocument()->findAll('css', '.promotion_label');
+        $catalogPromotions = $this->getDocument()->findAll('css', '.column .promotion_label');
         foreach ($catalogPromotions as $catalogPromotion) {
             if (explode(' - ', $catalogPromotion->getText())[0] === $name) {
                 return true;
@@ -139,7 +138,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
         $catalogPromotions = [];
 
         /** @var NodeElement $catalogPromotion */
-        foreach ($this->getElement('applied_promotions')->findAll('css', '.promotion_label') as $catalogPromotion) {
+        foreach ($this->getElement('product_price_content')->findAll('css', '.promotion_label') as $catalogPromotion) {
             $catalogPromotions[] = explode(' - ', $catalogPromotion->getText())[0];
         }
 
@@ -148,7 +147,9 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
 
     public function getCatalogPromotionNames(): array
     {
-        $catalogPromotions = $this->getDocument()->findAll('css', '.promotion_label');
+        /** @var NodeElement $productPriceContent */
+        $productPriceContent = $this->getElement('product_price_content');
+        $catalogPromotions = $productPriceContent->findAll('css', '.promotion_label');
 
         return array_map(function (NodeElement $element): string {
             return $element->getText();
@@ -370,6 +371,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
             'product_name' => '[data-test-product-name]',
             'product_original_price' => '[data-test-product-price-content] [data-test-product-original-price]',
             'product_price' => '[data-test-product-price-content] [data-test-product-price]',
+            'product_price_content' => '[data-test-product-price-content]',
             'quantity' => '[data-test-quantity]',
             'reviews' => '[data-test-product-reviews]',
             'reviews_comment' => '[data-test-comment="%title%"]',

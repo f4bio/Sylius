@@ -60,12 +60,7 @@
             <argument type="service" id="sylius.context.channel" />
             <argument type="service" id="sylius.availability_checker" />
             <argument type="service" id="sylius.section_resolver.uri_based_section_resolver" />
-            <tag name="serializer.normalizer" priority="64" />
-        </service>
-
-        <service id="Sylius\Bundle\ApiBundle\Serializer\OrderItemNormalizer">
-            <argument type="service" id="sylius.context.channel" />
-            <argument type="service" id="sylius.section_resolver.uri_based_section_resolver" />
+            <argument type="service" id="api_platform.iri_converter" />
             <tag name="serializer.normalizer" priority="64" />
         </service>
 
@@ -73,6 +68,8 @@
             <argument type="service" id="sylius.repository.order" />
             <argument type="service" id="sylius.repository.shipment" />
             <argument type="service" id="sylius.registry.shipping_calculator" />
+            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack" />
+            <argument type="service" id="Sylius\Component\Channel\Context\ChannelContextInterface" />
             <tag name="serializer.normalizer" priority="64" />
         </service>
 

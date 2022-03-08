@@ -23,11 +23,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class CurrencyChoiceType extends AbstractType
 {
-    private RepositoryInterface $currencyRepository;
-
-    public function __construct(RepositoryInterface $currencyRepository)
+    public function __construct(private RepositoryInterface $currencyRepository)
     {
-        $this->currencyRepository = $currencyRepository;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -40,9 +37,7 @@ final class CurrencyChoiceType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'choices' => function (Options $options): array {
-                return $this->currencyRepository->findAll();
-            },
+            'choices' => fn(Options $options): array => $this->currencyRepository->findAll(),
             'choice_value' => 'code',
             'choice_label' => 'name',
             'choice_translation_domain' => false,

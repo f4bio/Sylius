@@ -24,11 +24,8 @@ use Webmozart\Assert\Assert;
 
 final class ProductVariantsToCodesTransformer implements DataTransformerInterface
 {
-    private ProductVariantRepositoryInterface $productVariantRepository;
-
-    public function __construct(ProductVariantRepositoryInterface $productVariantRepository)
+    public function __construct(private ProductVariantRepositoryInterface $productVariantRepository)
     {
-        $this->productVariantRepository = $productVariantRepository;
     }
 
     /** @throws \InvalidArgumentException */
@@ -44,12 +41,12 @@ final class ProductVariantsToCodesTransformer implements DataTransformerInterfac
     }
 
     /** @throws \InvalidArgumentException */
-    public function reverseTransform($productVariants): array
+    public function reverseTransform($value): array
     {
-        Assert::isInstanceOf($productVariants, Collection::class);
+        Assert::isInstanceOf($value, Collection::class);
 
         return array_map(function (ProductVariantInterface $productVariant) {
             return $productVariant->getCode();
-        }, $productVariants->toArray());
+        }, $value->toArray());
     }
 }

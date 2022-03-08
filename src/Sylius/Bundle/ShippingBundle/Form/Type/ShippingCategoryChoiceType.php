@@ -23,11 +23,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class ShippingCategoryChoiceType extends AbstractType
 {
-    private RepositoryInterface $shippingCategoryRepository;
-
-    public function __construct(RepositoryInterface $shippingCategoryRepository)
+    public function __construct(private RepositoryInterface $shippingCategoryRepository)
     {
-        $this->shippingCategoryRepository = $shippingCategoryRepository;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -40,9 +37,7 @@ final class ShippingCategoryChoiceType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'choices' => function (Options $options) {
-                return $this->shippingCategoryRepository->findAll();
-            },
+            'choices' => fn(Options $options) => $this->shippingCategoryRepository->findAll(),
             'choice_value' => 'code',
             'choice_label' => 'name',
             'choice_translation_domain' => false,

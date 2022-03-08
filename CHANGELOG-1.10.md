@@ -1,6 +1,96 @@
 # CHANGELOG FOR `1.10.X`
 
+## v1.10.10 (2022-03-07)
+
+#### Details
+
+- [#13575](https://github.com/Sylius/Sylius/issues/13575) [DX] add correct return type to getAdjustments method ([@PILLOWPET](https://github.com/PILLOWPET))
+- [#13641](https://github.com/Sylius/Sylius/issues/13641) [ADR] Declaring services as public in container ([@lchrusciel](https://github.com/lchrusciel))
+- [#13647](https://github.com/Sylius/Sylius/issues/13647) Update Sylius supported versions ([@Zales0123](https://github.com/Zales0123))
+- [#13650](https://github.com/Sylius/Sylius/issues/13650) [Documentation] Update installation guide for Plus ([@GSadee](https://github.com/GSadee))
+- [#13660](https://github.com/Sylius/Sylius/issues/13660) [CLI] Cancel unpaid orders command ([@rafalswierczek](https://github.com/rafalswierczek))
+- [#13676](https://github.com/Sylius/Sylius/issues/13676) [Cart] Fix retrieving/overriding cart of logged in user by guest ([@SirDomin](https://github.com/SirDomin), [@GSadee](https://github.com/GSadee))
+- [#13683](https://github.com/Sylius/Sylius/issues/13683) Improve verbosity of canceling unpaid orders test ([@rafalswierczek](https://github.com/rafalswierczek))
+- [#13684](https://github.com/Sylius/Sylius/issues/13684) [Product][API][Bug] Fixed product sorting by translated names ([@Rafikooo](https://github.com/Rafikooo))
+- [#13695](https://github.com/Sylius/Sylius/issues/13695) [Order] Change getters and setters to use a proper flag name ([@GSadee](https://github.com/GSadee))
+- [#13715](https://github.com/Sylius/Sylius/issues/13715) add dependency injection conflict ([@SirDomin](https://github.com/SirDomin))
+- [#13716](https://github.com/Sylius/Sylius/issues/13716) [Documentation] Fix start date of development 1.12 version ([@GSadee](https://github.com/GSadee))
+- [#13725](https://github.com/Sylius/Sylius/issues/13725) [PaypalExpress] Dont take shipping tax adjustment to shipping cost ([@SirDomin](https://github.com/SirDomin))
+- [#13730](https://github.com/Sylius/Sylius/issues/13730) [Maintenance] Add conflict to symfony/framework-bundle to fix problem with solving path prefix in API scenarios ([@GSadee](https://github.com/GSadee))
+- [#13732](https://github.com/Sylius/Sylius/issues/13732) [Hot-fix] Conflict with symfony/dependency-injection even more ([@Zales0123](https://github.com/Zales0123))
+
+## v1.10.9 (2022-02-14)
+
+#### Details
+
+- [#13421](https://github.com/Sylius/Sylius/issues/13421) [Docs] How to customize the invoice logo - updated cookbook ([@Rafikooo](https://github.com/Rafikooo))
+- [#13423](https://github.com/Sylius/Sylius/issues/13423) [Docs] Customizing Credit Memo's logo ([@TheMilek](https://github.com/TheMilek))
+- [#13431](https://github.com/Sylius/Sylius/issues/13431) FIX: Avoid passing empty needle to strpos() ([@rimas-kudelis](https://github.com/rimas-kudelis))
+- [#13498](https://github.com/Sylius/Sylius/issues/13498) [Docs] Sylius 1.8 is not supported anymore ([@Zales0123](https://github.com/Zales0123))
+- [#13504](https://github.com/Sylius/Sylius/issues/13504) Postpone 1.10 end of maintenance date ([@Zales0123](https://github.com/Zales0123))
+- [#13506](https://github.com/Sylius/Sylius/issues/13506) [Docs] How to customize the invoice logo - neatly cut invoice image ([@Rafikooo](https://github.com/Rafikooo))
+- [#13513](https://github.com/Sylius/Sylius/issues/13513) [Architecture] Do not double install PHP dependencies ([@lchrusciel](https://github.com/lchrusciel))
+- [#13514](https://github.com/Sylius/Sylius/issues/13514) [Documentation] Update Core Team in our documentation ([@lchrusciel](https://github.com/lchrusciel))
+- [#13515](https://github.com/Sylius/Sylius/issues/13515) [Maintenance] Replace `test-package.sh` with native GH Actions ([@lchrusciel](https://github.com/lchrusciel))
+- [#13516](https://github.com/Sylius/Sylius/issues/13516) [Maintenance] Remove NelmioAlice from the main packages config ([@lchrusciel](https://github.com/lchrusciel))
+- [#13517](https://github.com/Sylius/Sylius/issues/13517) [Docs] Change the template path in customization ([@Roshyo](https://github.com/Roshyo))
+- [#13519](https://github.com/Sylius/Sylius/issues/13519) [Docs] Altered custom invoice logo path ([@Rafikooo](https://github.com/Rafikooo))
+- [#13520](https://github.com/Sylius/Sylius/issues/13520) change suggested path in refund docs ([@AdamKasp](https://github.com/AdamKasp))
+- [#13527](https://github.com/Sylius/Sylius/issues/13527) [Minor] Typo fixes in github packages config ([@lchrusciel](https://github.com/lchrusciel))
+- [#13535](https://github.com/Sylius/Sylius/issues/13535) [Minor] Removal of logic duplication in shipping charges processor ([@lchrusciel](https://github.com/lchrusciel))
+- [#13552](https://github.com/Sylius/Sylius/issues/13552) Fixing the documentation (1.10) ([@mamazu](https://github.com/mamazu))
+- [#13553](https://github.com/Sylius/Sylius/issues/13553) [Fixtures] USA deleted from the World zone ([@TheMilek](https://github.com/TheMilek))
+- [#13561](https://github.com/Sylius/Sylius/issues/13561) [Docs] Mention autoconfiguration case when extending the form ([@Zales0123](https://github.com/Zales0123))
+
+## v1.10.8 (2022-01-17)
+
+#### Details
+
+- [#12549](https://github.com/Sylius/Sylius/issues/12549) [Product Variant] Price Calculator fixed to return always int ([@lruozzi9](https://github.com/lruozzi9))
+- [#12759](https://github.com/Sylius/Sylius/issues/12759) Use phpspec ^7.1 and avoid custom error reporting level in its configuration ([@pamil](https://github.com/pamil))
+- [#13214](https://github.com/Sylius/Sylius/issues/13214) Replace `json_array` with `json` type as requested by the deprecation ([@Prometee](https://github.com/Prometee))
+- [#13366](https://github.com/Sylius/Sylius/issues/13366) [Docs] Add missing references in CONFLICT.md ([@lchrusciel](https://github.com/lchrusciel))
+- [#13379](https://github.com/Sylius/Sylius/issues/13379) [Bug][Migrations] Add missing `mysql` check for our migrations to ensure proper syntax is available ([@lchrusciel](https://github.com/lchrusciel))
+- [#13392](https://github.com/Sylius/Sylius/issues/13392) [Minor] Update possible branch version in GitHub PR template ([@lchrusciel](https://github.com/lchrusciel))
+- [#13405](https://github.com/Sylius/Sylius/issues/13405) Class name typo ([@TheDevilOnLine](https://github.com/TheDevilOnLine))
+- [#13426](https://github.com/Sylius/Sylius/issues/13426) Architecture tests initialization  ([@Zales0123](https://github.com/Zales0123))
+- [#13428](https://github.com/Sylius/Sylius/issues/13428) Symfony2 is no more 💃 ([@Zales0123](https://github.com/Zales0123))
+- [#13430](https://github.com/Sylius/Sylius/issues/13430) [Maintenance] Do not skip auto-configuration tests ([@lchrusciel](https://github.com/lchrusciel))
+- [#13435](https://github.com/Sylius/Sylius/issues/13435) [Behat] [Taxons] Fixed issue with asserting Taxons ([@TheDevilOnLine](https://github.com/TheDevilOnLine))
+- [#13439](https://github.com/Sylius/Sylius/issues/13439) Recalculate cart on remove item ([@SirDomin](https://github.com/SirDomin))
+- [#13454](https://github.com/Sylius/Sylius/issues/13454) Using phparkitect github actions ([@AlessandroMinoccheri](https://github.com/AlessandroMinoccheri))
+- [#13455](https://github.com/Sylius/Sylius/issues/13455) Delay 1.11 one more time ([@Zales0123](https://github.com/Zales0123))
+- [#13459](https://github.com/Sylius/Sylius/issues/13459) [API] Bring back SwaggerUI overriding ([@lchrusciel](https://github.com/lchrusciel))
+- [#13490](https://github.com/Sylius/Sylius/issues/13490) Unify latest CHANGELOGs format with the previous ones ([@Zales0123](https://github.com/Zales0123))
+
+## v1.10.7 (2021-12-09)
+
+#### Details
+
+- [#13365](https://github.com/Sylius/Sylius/issues/13365) Let's not release Sylius 1.11 on Sunday ([@Zales0123](https://github.com/Zales0123))
+- [#13372](https://github.com/Sylius/Sylius/issues/13372) Remove ORM 2.10 conflict ([@mbabker](https://github.com/mbabker))
+- [#13373](https://github.com/Sylius/Sylius/issues/13373) Revert "Move "polishsymfonycommunity/symfony-mocker-container" into dev dependencies" due to the BC break ([@lchrusciel](https://github.com/lchrusciel))
+
+## v1.10.6 (2021-12-07)
+
+#### Details
+
+- [#11751](https://github.com/Sylius/Sylius/issues/11751) [Core] added default factory for avatar image ([@foxou33](https://github.com/foxou33), [@lchrusciel](https://github.com/lchrusciel))
+- [#13118](https://github.com/Sylius/Sylius/issues/13118) Move "polishsymfonycommunity/symfony-mocker-container" into dev dependencies ([@stloyd](https://github.com/stloyd))
+- [#13275](https://github.com/Sylius/Sylius/issues/13275) [Maintenance] Add note about doctrine/dbal requirement ([@lchrusciel](https://github.com/lchrusciel))
+- [#13278](https://github.com/Sylius/Sylius/issues/13278) [Behat] Remove deprecated whitespace from behat tags ([@GSadee](https://github.com/GSadee))
+- [#13282](https://github.com/Sylius/Sylius/issues/13282) [API] Revert changes of checked keys in cart and checkout responses to fix the build ([@GSadee](https://github.com/GSadee))
+- [#13307](https://github.com/Sylius/Sylius/issues/13307) [Docs] Drop 1.9 bug support ([@lchrusciel](https://github.com/lchrusciel))
+- [#13310](https://github.com/Sylius/Sylius/issues/13310) Corrections for adding a field to the response ([@j92](https://github.com/j92))
+- [#13320](https://github.com/Sylius/Sylius/issues/13320) Remove swagger decorators when docs are disabled ([@paullla](https://github.com/paullla))
+- [#13322](https://github.com/Sylius/Sylius/issues/13322) [Spec] change username to runtime exception ([@SirDomin](https://github.com/SirDomin), [@lchrusciel](https://github.com/lchrusciel))
+- [#13335](https://github.com/Sylius/Sylius/issues/13335) [Minor] Removal of additional spaces and deprecation version fix ([@lchrusciel](https://github.com/lchrusciel))
+- [#13357](https://github.com/Sylius/Sylius/issues/13357) Add Symfony 5.4 support for Sylius 1.10  ([@AdamKasp](https://github.com/AdamKasp), [@GSadee](https://github.com/GSadee), [@lchrusciel](https://github.com/lchrusciel))
+- [#13360](https://github.com/Sylius/Sylius/issues/13360) Minimize number of build for packages ([@Zales0123](https://github.com/Zales0123))
+
 ## v1.10.5 (2021-11-03)
+
+#### Details
 
 - [#13162](https://github.com/Sylius/Sylius/issues/13162) [docs] typofixes ([@nexxai](https://github.com/nexxai))
 - [#13165](https://github.com/Sylius/Sylius/issues/13165) [HotFix] Add conflict to doctrine/orm to fix the problem with creating taxons ([@GSadee](https://github.com/GSadee))

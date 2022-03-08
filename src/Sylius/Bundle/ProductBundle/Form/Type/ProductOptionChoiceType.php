@@ -23,11 +23,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class ProductOptionChoiceType extends AbstractType
 {
-    private RepositoryInterface $productOptionRepository;
-
-    public function __construct(RepositoryInterface $productOptionRepository)
+    public function __construct(private RepositoryInterface $productOptionRepository)
     {
-        $this->productOptionRepository = $productOptionRepository;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -40,9 +37,7 @@ final class ProductOptionChoiceType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'choices' => function (Options $options): array {
-                return $this->productOptionRepository->findAll();
-            },
+            'choices' => fn(Options $options): array => $this->productOptionRepository->findAll(),
             'choice_value' => 'code',
             'choice_label' => 'name',
             'choice_translation_domain' => false,

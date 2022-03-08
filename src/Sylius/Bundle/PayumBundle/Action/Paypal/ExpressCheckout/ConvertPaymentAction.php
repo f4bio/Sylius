@@ -23,11 +23,8 @@ use Sylius\Component\Core\Payment\InvoiceNumberGeneratorInterface;
 
 final class ConvertPaymentAction implements ActionInterface
 {
-    private InvoiceNumberGeneratorInterface $invoiceNumberGenerator;
-
-    public function __construct(InvoiceNumberGeneratorInterface $invoiceNumberGenerator)
+    public function __construct(private InvoiceNumberGeneratorInterface $invoiceNumberGenerator)
     {
-        $this->invoiceNumberGenerator = $invoiceNumberGenerator;
     }
 
     /**
@@ -75,7 +72,7 @@ final class ConvertPaymentAction implements ActionInterface
             ++$m;
         }
 
-        if (0 !== $shippingTotal = $order->getShippingTotal()) {
+        if (0 !== $shippingTotal = $this->getShippingTotalWithoutTaxes($order)) {
             $details['L_PAYMENTREQUEST_0_NAME' . $m] = 'Shipping Total';
             $details['L_PAYMENTREQUEST_0_AMT' . $m] = $this->formatPrice($shippingTotal);
             $details['L_PAYMENTREQUEST_0_QTY' . $m] = 1;
@@ -91,6 +88,11 @@ final class ConvertPaymentAction implements ActionInterface
             $request->getSource() instanceof PaymentInterface &&
             $request->getTo() === 'array'
         ;
+    }
+
+    private function getShippingTotalWithoutTaxes(OrderInterface $order): int
+    {
+        return $order->getAdjustmentsTotal(AdjustmentInterface::SHIPPING_ADJUSTMENT) + $order->getAdjustmentsTotal(AdjustmentInterface::ORDER_SHIPPING_PROMOTION_ADJUSTMENT);
     }
 
     private function formatPrice(int $price): float

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Sylius\Behat\Page\Admin\CatalogPromotion;
 
 use FriendsOfBehat\PageObjectExtension\Page\SymfonyPage;
+use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 
@@ -56,6 +57,18 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
         return false;
     }
 
+    public function hasActionWithFixedDiscount(string $amount, ChannelInterface $channel): bool
+    {
+        $amountsElements = $this->getDocument()->findAll('css', '[data-test-action-' . $channel->getCode() . '-amount]');
+        foreach ($amountsElements as $amountElement) {
+            if ($amountElement->getText() === $amount) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function hasScopeWithVariant(ProductVariantInterface $variant): bool
     {
         $variantsElements = $this->getDocument()->findAll('css', '[data-test-scope-variants]');
@@ -80,10 +93,16 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
         return false;
     }
 
+    public function isExclusive(): bool
+    {
+        return $this->hasElement('exclusive');
+    }
+
     protected function getDefinedElements(): array
     {
         return array_merge(parent::getDefinedElements(), [
             'end_date' => '[data-test-end-date]',
+            'exclusive' => '[data-test-exclusive]',
             'name' => '[data-test-name]',
             'priority' => '[data-test-priority]',
             'start_date' => '[data-test-start-date]',

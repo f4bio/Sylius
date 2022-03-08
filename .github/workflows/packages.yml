@@ -7,10 +7,12 @@ on:
         paths:
             - "src/Sylius/Bundle/**"
             - "src/Sylius/Component/**"
+            - ".github/workflows/packages.yml"
     pull_request:
         paths:
             - "src/Sylius/Bundle/**"
             - "src/Sylius/Component/**"
+            - ".github/workflows/packages.yml"
     release:
         types: [created]
     schedule:
@@ -48,8 +50,8 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php: ["7.4", "8.0"]
-                symfony: ["^4.4", "5.3.*"]
+                php: ["8.0"]
+                symfony: ["^5.4"]
                 package: "${{ fromJson(needs.list.outputs.packages) }}"
 
         steps:
@@ -97,10 +99,44 @@ jobs:
                 env:
                     COMPOSER_ROOT_VERSION: dev-master
                 working-directory: "src/Sylius/${{ matrix.package }}"
+                id: end-of-setup
 
             -
-                name: Test package
-                run: bin/test-package src/Sylius/${{ matrix.package }}
+                name: Run PHPArkitect
+                working-directory: "src/Sylius/${{ matrix.package }}"
+                run: vendor/phparkitect/phparkitect/bin-stub/phparkitect check
+                if: always() && steps.end-of-setup.outcome == 'success' && matrix.package == 'Bundle/ApiBundle'
+
+            -
+                name: Setup Database (for ApiBundle only)
+                working-directory: "src/Sylius/${{ matrix.package }}"
+                run: test/bin/console doctrine:schema:update --force -e test
+                if: always() && matrix.package == 'Bundle/ApiBundle'
+
+            -
+                name: Run PHPSpec
+                working-directory: "src/Sylius/${{ matrix.package }}"
+                run: vendor/bin/phpspec run --ansi --no-interaction -f dot
+
+            -
+                name: Check the existence of phpunit.xml.dist
+                id: phpunit_xml_dist_existence_check
+                uses: andstor/file-existence-action@v1
+                with:
+                    files: "src/Sylius/${{ matrix.package }}/phpunit.xml.dist"
+
+            -
+                name: Check the existence of phpunit.xml
+                id: phpunit_xml_existence_check
+                uses: andstor/file-existence-action@v1
+                with:
+                    files: "src/Sylius/${{ matrix.package }}/phpunit.xml"
+
+            -
+                name: Run PHPUnit
+                working-directory: "src/Sylius/${{ matrix.package }}"
+                if: steps.phpunit_xml_dist_existence_check.outputs.files_exists == 'true' || steps.phpunit_xml_existence_check.outputs.files_exists == 'true'
+                run: vendor/bin/phpunit --colors=always
 
     notify-about-build-failure:
         runs-on: ubuntu-latest

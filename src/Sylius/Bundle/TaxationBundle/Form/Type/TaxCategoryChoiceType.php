@@ -23,11 +23,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class TaxCategoryChoiceType extends AbstractType
 {
-    private RepositoryInterface $taxCategoryRepository;
-
-    public function __construct(RepositoryInterface $taxCategoryRepository)
+    public function __construct(private RepositoryInterface $taxCategoryRepository)
     {
-        $this->taxCategoryRepository = $taxCategoryRepository;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -40,9 +37,7 @@ final class TaxCategoryChoiceType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'choices' => function (Options $options) {
-                return $this->taxCategoryRepository->findAll();
-            },
+            'choices' => fn(Options $options) => $this->taxCategoryRepository->findAll(),
             'choice_value' => 'code',
             'choice_label' => 'name',
             'choice_translation_domain' => false,

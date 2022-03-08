@@ -20,7 +20,7 @@ use Sylius\Component\Product\Model\ProductVariant as BaseVariant;
 use Sylius\Component\Shipping\Model\ShippingCategoryInterface;
 use Sylius\Component\Taxation\Model\TaxCategoryInterface;
 
-class ProductVariant extends BaseVariant implements ProductVariantInterface, Comparable
+class ProductVariant extends BaseVariant implements ProductVariantInterface, Comparable, \Stringable
 {
     /**
      * @var int
@@ -172,9 +172,9 @@ class ProductVariant extends BaseVariant implements ProductVariantInterface, Com
         return $this->shippingCategory;
     }
 
-    public function setShippingCategory(?ShippingCategoryInterface $category): void
+    public function setShippingCategory(?ShippingCategoryInterface $shippingCategory): void
     {
-        $this->shippingCategory = $category;
+        $this->shippingCategory = $shippingCategory;
     }
 
     public function getWeight(): ?float
@@ -302,11 +302,11 @@ class ProductVariant extends BaseVariant implements ProductVariantInterface, Com
         $this->shippingRequired = $shippingRequired;
     }
 
-    public function getAppliedPromotionsForChannel(ChannelInterface $channel): array
+    public function getAppliedPromotionsForChannel(ChannelInterface $channel): Collection
     {
         $channelPricing = $this->getChannelPricingForChannel($channel);
 
-        return ($channelPricing !== null) ? $channelPricing->getAppliedPromotions() : [];
+        return ($channelPricing !== null) ? $channelPricing->getAppliedPromotions() : new ArrayCollection();
     }
 
     /**

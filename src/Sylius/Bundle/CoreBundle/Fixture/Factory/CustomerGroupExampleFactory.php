@@ -23,16 +23,12 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class CustomerGroupExampleFactory extends AbstractExampleFactory implements ExampleFactoryInterface
 {
-    private FactoryInterface $customerGroupFactory;
-
     private Generator $faker;
 
     private OptionsResolver $optionsResolver;
 
-    public function __construct(FactoryInterface $customerGroupFactory)
+    public function __construct(private FactoryInterface $customerGroupFactory)
     {
-        $this->customerGroupFactory = $customerGroupFactory;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -60,9 +56,7 @@ class CustomerGroupExampleFactory extends AbstractExampleFactory implements Exam
 
                 return $words;
             })
-            ->setDefault('code', function (Options $options): string {
-                return StringInflector::nameToCode($options['name']);
-            })
+            ->setDefault('code', fn(Options $options): string => StringInflector::nameToCode($options['name']))
         ;
     }
 }

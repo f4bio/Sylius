@@ -17,16 +17,21 @@ use Behat\Behat\Context\Context;
 use Doctrine\ORM\EntityManagerInterface;
 use SM\Factory\FactoryInterface as StateMachineFactoryInterface;
 use Sylius\Behat\Service\SharedStorageInterface;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Calculator\FixedDiscountPriceCalculator;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Calculator\PercentageDiscountPriceCalculator;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForProductScopeVariantChecker;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForTaxonsScopeVariantChecker;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForVariantsScopeVariantChecker;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Formatter\StringInflector;
 use Sylius\Component\Core\Model\CatalogPromotionInterface;
-use Sylius\Component\Core\Model\CatalogPromotionScopeInterface;
+use Sylius\Component\Promotion\Event\CatalogPromotionCreated;
+use Sylius\Component\Promotion\Model\CatalogPromotionScopeInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
-use Sylius\Component\Core\ProductReviewTransitions;
 use Sylius\Component\Promotion\Event\CatalogPromotionUpdated;
 use Sylius\Component\Promotion\Model\CatalogPromotionActionInterface;
 use Sylius\Component\Promotion\Model\CatalogPromotionTransitions;
@@ -107,6 +112,7 @@ final class CatalogPromotionContext implements Context
 
     /**
      * @Given there are catalog promotions named :firstName and :secondName
+     * @Given there is a catalog promotion named :name
      */
     public function thereAreCatalogPromotionsNamed(string ...$names): void
     {
@@ -136,7 +142,7 @@ final class CatalogPromotionContext implements Context
     {
         /** @var CatalogPromotionScopeInterface $catalogPromotionScope */
         $catalogPromotionScope = $this->catalogPromotionScopeFactory->createNew();
-        $catalogPromotionScope->setType(CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS);
+        $catalogPromotionScope->setType(InForVariantsScopeVariantChecker::TYPE);
         $catalogPromotionScope->setConfiguration(['variants' => [$variant->getCode()]]);
 
         $catalogPromotion->addScope($catalogPromotionScope);
@@ -151,7 +157,7 @@ final class CatalogPromotionContext implements Context
     {
         /** @var CatalogPromotionScopeInterface $catalogPromotionScope */
         $catalogPromotionScope = $this->catalogPromotionScopeFactory->createNew();
-        $catalogPromotionScope->setType(CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS);
+        $catalogPromotionScope->setType(InForProductScopeVariantChecker::TYPE);
         $catalogPromotionScope->setConfiguration(['products' => [$product->getCode()]]);
 
         $catalogPromotion->addScope($catalogPromotionScope);
@@ -162,13 +168,23 @@ final class CatalogPromotionContext implements Context
     }
 
     /**
+     * @Given :catalogPromotion catalog promotion is exclusive
+     */
+    public function catalogPromotionIsExclusive(CatalogPromotionInterface $catalogPromotion): void
+    {
+        $catalogPromotion->setExclusive(true);
+        $this->entityManager->flush();
+        $this->eventBus->dispatch(new CatalogPromotionUpdated($catalogPromotion->getCode()));
+    }
+
+    /**
      * @Given /^(it) reduces price by ("[^"]+")$/
      */
     public function itWillReducePrice(CatalogPromotionInterface $catalogPromotion, float $discount): void
     {
         /** @var CatalogPromotionActionInterface $catalogPromotionAction */
         $catalogPromotionAction = $this->catalogPromotionActionFactory->createNew();
-        $catalogPromotionAction->setType(CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT);
+        $catalogPromotionAction->setType(PercentageDiscountPriceCalculator::TYPE);
         $catalogPromotionAction->setConfiguration(['amount' => $discount]);
 
         $catalogPromotion->addAction($catalogPromotionAction);
@@ -177,8 +193,26 @@ final class CatalogPromotionContext implements Context
     }
 
     /**
-     * @Given /^there is a catalog promotion "([^"]*)" that reduces price by ("[^"]+") and applies on ("[^"]+" variant) and ("[^"]+" variant)$/
-     * @Given /^there is a catalog promotion "([^"]*)" that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
+     * @Given /^(it) reduces(?:| also) price by fixed ("[^"]+") in the ("[^"]+" channel)$/
+     */
+    public function itReducesPriceByFixedInTheChannel(
+        CatalogPromotionInterface $catalogPromotion,
+        int $discount,
+        ChannelInterface $channel
+    ): void {
+        /** @var CatalogPromotionActionInterface $catalogPromotionAction */
+        $catalogPromotionAction = $this->catalogPromotionActionFactory->createNew();
+        $catalogPromotionAction->setType(FixedDiscountPriceCalculator::TYPE);
+        $catalogPromotionAction->setConfiguration([$channel->getCode() => ['amount' => $discount]]);
+
+        $catalogPromotion->addAction($catalogPromotionAction);
+
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @Given /^there is (?:a|another) catalog promotion "([^"]*)" that reduces price by ("[^"]+") and applies on ("[^"]+" variant) and ("[^"]+" variant)$/
+     * @Given /^there is (?:a|another) catalog promotion "([^"]*)" that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
      */
     public function thereIsACatalogPromotionThatReducesPriceByAndAppliesOn(
         string $name,
@@ -195,16 +229,102 @@ final class CatalogPromotionContext implements Context
             null,
             [],
             [[
-                'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                'type' => InForVariantsScopeVariantChecker::TYPE,
                 'configuration' => ['variants' => $variantCodes],
             ]],
             [[
-                'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                'type' => PercentageDiscountPriceCalculator::TYPE,
                 'configuration' => ['amount' => $discount],
             ]]
         );
 
         $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionCreated(StringInflector::nameToCode($name)));
+    }
+
+    /**
+     * @Given /^there is a catalog promotion "([^"]*)" that reduces price by fixed ("[^"]+") in the ("[^"]+" channel) and applies on ("[^"]+" variant)$/
+     */
+    public function thereIsACatalogPromotionThatReducesPriceByFixedInTheChannelAndAppliesOnVariant(
+        string $name,
+        int $discount,
+        ChannelInterface $channel,
+        ProductVariantInterface $variant
+    ): void {
+        $this->createCatalogPromotion(
+            $name,
+            null,
+            [],
+            [[
+                'type' => InForVariantsScopeVariantChecker::TYPE,
+                'configuration' => ['variants' => [$variant->getCode()]],
+            ]],
+            [[
+                'type' => FixedDiscountPriceCalculator::TYPE,
+                'configuration' => [$channel->getCode() => ['amount' => $discount/100]],
+            ]]
+        );
+
+        $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionCreated(StringInflector::nameToCode($name)));
+    }
+
+    /**
+     * @Given /^there is a catalog promotion "([^"]*)" that reduces price by fixed ("[^"]+") in the ("[^"]+" channel) and applies on ("[^"]+" product)$/
+     */
+    public function thereIsACatalogPromotionThatReducesPriceByFixedInTheChannelAndAppliesOnProduct(
+        string $name,
+        int $discount,
+        ChannelInterface $channel,
+        ProductInterface $product
+    ): void {
+        $this->createCatalogPromotion(
+            $name,
+            null,
+            [],
+            [[
+                'type' => InForProductScopeVariantChecker::TYPE,
+                'configuration' => ['products' => [$product->getCode()]],
+            ]],
+            [[
+                'type' => FixedDiscountPriceCalculator::TYPE,
+                'configuration' => [$channel->getCode() => ['amount' => $discount/100]],
+            ]]
+        );
+
+        $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionCreated(StringInflector::nameToCode($name)));
+    }
+
+    /**
+     * @Given /^there is a catalog promotion "([^"]*)" that reduces price by fixed ("[^"]+") in the ("[^"]+" channel) and applies on ("[^"]+" taxon)$/
+     */
+    public function thereIsACatalogPromotionThatReducesPriceByFixedInTheChannelAndAppliesOnTaxon(
+        string $name,
+        int $discount,
+        ChannelInterface $channel,
+        TaxonInterface $taxon
+    ): void {
+        $this->createCatalogPromotion(
+            $name,
+            null,
+            [],
+            [[
+                'type' => InForTaxonsScopeVariantChecker::TYPE,
+                'configuration' => ['taxons' => [$taxon->getCode()]],
+            ]],
+            [[
+                'type' => FixedDiscountPriceCalculator::TYPE,
+                'configuration' => [$channel->getCode() => ['amount' => $discount/100]],
+            ]]
+        );
+
+        $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionCreated(StringInflector::nameToCode($name)));
     }
 
     /**
@@ -234,20 +354,22 @@ final class CatalogPromotionContext implements Context
             null,
             [],
             [[
-                'type' => CatalogPromotionScopeInterface::TYPE_FOR_TAXONS,
+                'type' => InForTaxonsScopeVariantChecker::TYPE,
                 'configuration' => ['taxons' => [$taxon->getCode()]],
             ]],
             [[
-                'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                'type' => PercentageDiscountPriceCalculator::TYPE,
                 'configuration' => ['amount' => $discount],
             ]]
         );
 
         $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionCreated(StringInflector::nameToCode($name)));
     }
 
     /**
-     * @Given /^there is a catalog promotion "([^"]*)" available in ("[^"]+" channel) that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
+     * @Given /^there is (?:a|another) catalog promotion "([^"]*)" available in ("[^"]+" channel) that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
      */
     public function thereIsACatalogPromotionAvailableInChannelThatReducesPriceByAndAppliesOnVariant(
         string $name,
@@ -256,17 +378,77 @@ final class CatalogPromotionContext implements Context
         ProductVariantInterface $variant
     ): void {
         $this->createCatalogPromotion(
-            $name,
-            null,
-            [$channel->getCode()],
-            [[
-                'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+            name: $name,
+            channels: [$channel->getCode()],
+            scopes: [[
+                'type' => InForVariantsScopeVariantChecker::TYPE,
                 'configuration' => ['variants' => [$variant->getCode()]],
             ]],
-            [[
-                'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+            actions: [[
+                'type' => PercentageDiscountPriceCalculator::TYPE,
                 'configuration' => ['amount' => $discount],
             ]]
+        );
+
+        $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionCreated(StringInflector::nameToCode($name)));
+    }
+
+    /**
+     * @Given /^there is (?:a|another) catalog promotion "([^"]*)" between "([^"]+)" and "([^"]+)" available in ("[^"]+" channel) that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
+     */
+    public function thereIsACatalogPromotionBetweenAvailableInChannelThatReducesPriceByAndAppliesOnVariant(
+        string $name,
+        string $startDate,
+        string $endDate,
+        ChannelInterface $channel,
+        float $discount,
+        ProductVariantInterface $variant
+    ): void {
+        $this->createCatalogPromotion(
+            name: $name,
+            channels: [$channel->getCode()],
+            scopes: [[
+                'type' => InForVariantsScopeVariantChecker::TYPE,
+                'configuration' => ['variants' => [$variant->getCode()]],
+            ]],
+            actions: [[
+                'type' => PercentageDiscountPriceCalculator::TYPE,
+                'configuration' => ['amount' => $discount],
+            ]],
+            startDate: $startDate,
+            endDate: $endDate
+        );
+
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @Given /^there is disabled catalog promotion "([^"]*)" between "([^"]+)" and "([^"]+)" available in ("[^"]+" channel) that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
+     */
+    public function thereIsDisabledCatalogPromotionAvailableInChannelThatReducesPriceByAndAppliesOnVariant(
+        string $name,
+        string $startDate,
+        string $endDate,
+        ChannelInterface $channel,
+        float $discount,
+        ProductVariantInterface $variant
+    ): void {
+        $this->createCatalogPromotion(
+            name: $name,
+            channels: [$channel->getCode()],
+            scopes: [[
+                'type' => InForVariantsScopeVariantChecker::TYPE,
+                'configuration' => ['variants' => [$variant->getCode()]],
+            ]],
+            actions: [[
+                'type' => PercentageDiscountPriceCalculator::TYPE,
+                'configuration' => ['amount' => $discount],
+            ]],
+            startDate: $startDate,
+            endDate: $endDate,
+            enabled: false
         );
 
         $this->entityManager->flush();
@@ -290,11 +472,11 @@ final class CatalogPromotionContext implements Context
                 $secondChannel->getCode()
             ],
             [[
-                'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                'type' => InForVariantsScopeVariantChecker::TYPE,
                 'configuration' => ['variants' => [$variant->getCode()]],
             ]],
             [[
-                'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                'type' => PercentageDiscountPriceCalculator::TYPE,
                 'configuration' => ['amount' => $discount],
             ]]
         );
@@ -303,26 +485,59 @@ final class CatalogPromotionContext implements Context
     }
 
     /**
-     * @Given /^there is another catalog promotion "([^"]*)" available in ("[^"]+" channel) that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
+     * @Given /^there is (?:a|another) catalog promotion "([^"]*)" between "([^"]+)" and "([^"]+)" available in ("[^"]+" channel) that reduces price by ("[^"]+") and applies on ("[^"]+" taxon)$/
      */
-    public function thereIsAnotherCatalogPromotionAvailableInChannelThatReducesPriceByAndAppliesOnVariant(
+    public function thereIsACatalogPromotionBetweenAvailableInChannelThatReducesPriceByAndAppliesOnTaxon(
         string $name,
+        string $startDate,
+        string $endDate,
         ChannelInterface $channel,
         float $discount,
-        ProductVariantInterface $variant
+        TaxonInterface $taxon
     ): void {
         $this->createCatalogPromotion(
-            $name,
-            null,
-            [$channel->getCode()],
-            [[
-                'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
-                'configuration' => ['variants' => [$variant->getCode()]],
+            name: $name,
+            channels: [$channel->getCode()],
+            scopes: [[
+                'type' => InForTaxonsScopeVariantChecker::TYPE,
+                'configuration' => ['taxons' => [$taxon->getCode()]],
             ]],
-            [[
-                'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+            actions: [[
+                'type' => PercentageDiscountPriceCalculator::TYPE,
                 'configuration' => ['amount' => $discount],
-            ]]
+            ]],
+            startDate: $startDate,
+            endDate: $endDate
+        );
+
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @Given /^there is disabled catalog promotion "([^"]*)" between "([^"]+)" and "([^"]+)" available in ("[^"]+" channel) that reduces price by ("[^"]+") and applies on ("[^"]+" taxon)$/
+     */
+    public function thereIsDisabledCatalogPromotionBetweenAvailableInChannelThatReducesPriceByAndAppliesOnTaxon(
+        string $name,
+        string $startDate,
+        string $endDate,
+        ChannelInterface $channel,
+        float $discount,
+        TaxonInterface $taxon
+    ): void {
+        $this->createCatalogPromotion(
+            name: $name,
+            channels: [$channel->getCode()],
+            scopes: [[
+                'type' => InForTaxonsScopeVariantChecker::TYPE,
+                'configuration' => ['taxons' => [$taxon->getCode()]],
+            ]],
+            actions: [[
+                'type' => PercentageDiscountPriceCalculator::TYPE,
+                'configuration' => ['amount' => $discount],
+            ]],
+            startDate: $startDate,
+            endDate: $endDate,
+            enabled: false
         );
 
         $this->entityManager->flush();
@@ -341,22 +556,38 @@ final class CatalogPromotionContext implements Context
             null,
             [],
             [[
-                'type' => CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS,
+                'type' => InForProductScopeVariantChecker::TYPE,
                 'configuration' => ['products' => [$product->getCode()]],
             ]],
             [[
-                'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                'type' => PercentageDiscountPriceCalculator::TYPE,
                 'configuration' => ['amount' => $discount],
             ]]
         );
 
         $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionCreated(StringInflector::nameToCode($name)));
+    }
+
+    /**
+     * @Given /^there is a catalog promotion "([^"]+)" with priority ([^"]+)$/
+     */
+    public function thereIsACatalogPromotionWithPriority(
+        string $name,
+        int $priority
+    ): void {
+        $catalogPromotion = $this->createCatalogPromotion(name: $name, priority: $priority);
+
+        $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionUpdated($catalogPromotion->getCode()));
     }
 
     /**
      * @Given /^there is a catalog promotion "([^"]+)" with priority ([^"]+) that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
      */
-    public function thereIsACatalogPromotionWithPriorityThatReducesPriceByAndAppliesOnVarian(
+    public function thereIsACatalogPromotionWithPriorityThatReducesPriceByAndAppliesOnVariant(
         string $name,
         int $priority,
         float $discount,
@@ -367,14 +598,104 @@ final class CatalogPromotionContext implements Context
             null,
             [],
             [[
-                'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                'type' => InForVariantsScopeVariantChecker::TYPE,
                 'configuration' => ['variants' => [$variant->getCode()]],
             ]],
             [[
-                'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                'type' => PercentageDiscountPriceCalculator::TYPE,
                 'configuration' => ['amount' => $discount],
             ]],
             $priority
+        );
+
+        $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionUpdated($catalogPromotion->getCode()));
+    }
+
+    /**
+     * @Given /^there is (?:an|another) exclusive catalog promotion "([^"]+)" with priority ([^"]+) that reduces price by ("[^"]+") and applies on ("[^"]+" variant)$/
+     */
+    public function thereIsAnExclusiveCatalogPromotionWithPriorityThatReducesPriceByAndAppliesOnVariant(
+        string $name,
+        int $priority,
+        float $discount,
+        ProductVariantInterface $variant
+    ): void {
+        $catalogPromotion = $this->createCatalogPromotion(
+            $name,
+            null,
+            [],
+            [[
+                'type' => InForVariantsScopeVariantChecker::TYPE,
+                'configuration' => ['variants' => [$variant->getCode()]],
+            ]],
+            [[
+                'type' => PercentageDiscountPriceCalculator::TYPE,
+                'configuration' => ['amount' => $discount],
+            ]],
+            $priority,
+            true
+        );
+
+        $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionUpdated($catalogPromotion->getCode()));
+    }
+
+    /**
+     * @Given /^there is a catalog promotion "([^"]+)" with priority ([^"]+) that reduces price by fixed ("[^"]+") in the ("[^"]+" channel) and applies on ("[^"]+" product)$/
+     */
+    public function thereIsACatalogPromotionWithPriorityThatReducesPriceByFixedInTheChannelAndAppliesOnProduct(
+        string $name,
+        int $priority,
+        int $discount,
+        ChannelInterface $channel,
+        ProductInterface $product
+    ): void {
+        $catalogPromotion = $this->createCatalogPromotion(
+            $name,
+            null,
+            [],
+            [[
+                'type' => InForProductScopeVariantChecker::TYPE,
+                'configuration' => ['products' => [$product->getCode()]],
+            ]],
+            [[
+                'type' => FixedDiscountPriceCalculator::TYPE,
+                'configuration' => [$channel->getCode() => ['amount' => $discount/100]],
+            ]],
+            $priority
+        );
+
+        $this->entityManager->flush();
+
+        $this->eventBus->dispatch(new CatalogPromotionUpdated($catalogPromotion->getCode()));
+    }
+
+    /**
+     * @Given /^there is a catalog promotion "([^"]+)" with priority ([^"]+) that reduces price by fixed ("[^"]+") in the ("[^"]+" channel) and applies on ("[^"]+" taxon)$/
+     */
+    public function thereIsACatalogPromotionWithPriorityThatReducesPriceByFixedInTheChannelAndAppliesOnTaxon(
+        string $name,
+        int $priority,
+        int $discount,
+        ChannelInterface $channel,
+        TaxonInterface $taxon
+    ): void {
+        $catalogPromotion = $this->createCatalogPromotion(
+            $name,
+            null,
+            [],
+            [[
+                'type' => InForTaxonsScopeVariantChecker::TYPE,
+                'configuration' => ['taxons' => [$taxon->getCode()]],
+            ]],
+            [[
+                'type' => FixedDiscountPriceCalculator::TYPE,
+                'configuration' => [$channel->getCode() => ['amount' => $discount/100]],
+            ]],
+            $priority,
         );
 
         $this->entityManager->flush();
@@ -399,6 +720,7 @@ final class CatalogPromotionContext implements Context
 
     /**
      * @Given the catalog promotion :catalogPromotion operates between :startDate and :endDate
+     * @Given /^(this catalog promotion) operates between "([^"]+)" and "([^"]+)"$/
      */
     public function theCatalogPromotionOperatesBetweenDates(
         CatalogPromotionInterface $catalogPromotion,
@@ -418,6 +740,17 @@ final class CatalogPromotionContext implements Context
     public function theCatalogPromotionStartsAt(CatalogPromotionInterface $catalogPromotion, string $startDate): void
     {
         $catalogPromotion->setStartDate(new \DateTime($startDate));
+
+        $this->entityManager->flush();
+        $this->eventBus->dispatch(new CatalogPromotionUpdated($catalogPromotion->getCode()));
+    }
+
+    /**
+     * @Given the catalog promotion :catalogPromotion ended :endDate
+     */
+    public function theCatalogPromotionEndedAt(CatalogPromotionInterface $catalogPromotion, string $endDate): void
+    {
+        $catalogPromotion->setEndDate(new \DateTime($endDate));
 
         $this->entityManager->flush();
         $this->eventBus->dispatch(new CatalogPromotionUpdated($catalogPromotion->getCode()));
@@ -464,7 +797,11 @@ final class CatalogPromotionContext implements Context
         array $channels = [],
         array $scopes = [],
         array $actions = [],
-        int $priority = null
+        int $priority = null,
+        bool $exclusive = false,
+        ?string $startDate = null,
+        ?string $endDate = null,
+        bool $enabled = true
     ): CatalogPromotionInterface {
         if (empty($channels) && $this->sharedStorage->has('channel')) {
             $channels = [$this->sharedStorage->get('channel')];
@@ -476,11 +813,15 @@ final class CatalogPromotionContext implements Context
         $catalogPromotion = $this->catalogPromotionExampleFactory->create([
             'name' => $name,
             'code' => $code,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'enabled' => $enabled,
             'channels' => $channels,
             'actions' => $actions,
             'scopes' => $scopes,
             'description' => $name . ' description',
             'priority' => $priority,
+            'exclusive' => $exclusive,
         ]);
 
         $this->entityManager->persist($catalogPromotion);

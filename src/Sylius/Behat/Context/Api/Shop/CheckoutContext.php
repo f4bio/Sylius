@@ -49,6 +49,10 @@ final class CheckoutContext implements Context
 
     private ApiClientInterface $addressesClient;
 
+    private ApiClientInterface $shippingMethodsClient;
+
+    private ApiClientInterface $paymentMethodsClient;
+
     private ResponseCheckerInterface $responseChecker;
 
     private RepositoryInterface $shippingMethodRepository;
@@ -73,6 +77,8 @@ final class CheckoutContext implements Context
     public function __construct(
         ApiClientInterface $ordersClient,
         ApiClientInterface $addressesClient,
+        ApiClientInterface $shippingMethodsClient,
+        ApiClientInterface $paymentMethodsClient,
         ResponseCheckerInterface $responseChecker,
         RepositoryInterface $shippingMethodRepository,
         OrderRepositoryInterface $orderRepository,
@@ -85,6 +91,8 @@ final class CheckoutContext implements Context
     ) {
         $this->ordersClient = $ordersClient;
         $this->addressesClient = $addressesClient;
+        $this->shippingMethodsClient = $shippingMethodsClient;
+        $this->paymentMethodsClient = $paymentMethodsClient;
         $this->responseChecker = $responseChecker;
         $this->shippingMethodRepository = $shippingMethodRepository;
         $this->orderRepository = $orderRepository;
@@ -288,6 +296,23 @@ final class CheckoutContext implements Context
     {
         $this->addressOrder([
             'email' => $email,
+            'billingAddress' => [
+                'city' => $address->getCity(),
+                'street' => $address->getStreet(),
+                'postcode' => $address->getPostcode(),
+                'countryCode' => $address->getCountryCode(),
+                'firstName' => $address->getFirstName(),
+                'lastName' => $address->getLastName(),
+            ],
+        ]);
+    }
+
+    /**
+     * @When /^I complete addressing step with ("[^"]+" based billing address)$/
+     */
+    public function iCompleteAddressingStepWithAddress(AddressInterface $address): void
+    {
+        $this->addressOrder([
             'billingAddress' => [
                 'city' => $address->getCity(),
                 'street' => $address->getStreet(),
@@ -585,6 +610,30 @@ final class CheckoutContext implements Context
     }
 
     /**
+     * @Then I should see :firstPaymentMethodName and :secondPaymentMethodName payment methods
+     */
+    public function iShouldSeePaymentMethods(string ...$paymentMethodsNames): void
+    {
+        $paymentMethods = $this->getPossiblePaymentMethods();
+
+        foreach ($paymentMethodsNames as $paymentMethodName) {
+            Assert::inArray($paymentMethodName, array_column($paymentMethods, 'name'));
+        }
+    }
+
+    /**
+     * @Then I should not see :firstPaymentMethodName and :secondPaymentMethodName payment methods
+     */
+    public function iShouldNotSeePaymentMethods(string ...$paymentMethodsNames): void
+    {
+        $paymentMethods = $this->getPossiblePaymentMethods();
+
+        foreach ($paymentMethodsNames as $paymentMethodName) {
+            Assert::false(in_array($paymentMethodName, array_column($paymentMethods, 'name'), true));
+        }
+    }
+
+    /**
      * @Then I should have :paymentMethodName payment method available as the :choice choice
      */
     public function iShouldHavePaymentMethodAvailableAsTheChoice(string $paymentMethodName, string $choice): void
@@ -671,7 +720,7 @@ final class CheckoutContext implements Context
         $shippingMethodName = $shippingMethod->getName();
 
         foreach ($shippingMethods as $method) {
-            if ($method['translations']['en_US']['name'] === $shippingMethodName) {
+            if ($method['name'] === $shippingMethodName) {
                 return;
             }
         }
@@ -1161,17 +1210,9 @@ final class CheckoutContext implements Context
             $content['email'] = null;
         }
 
-        $request = Request::customItemAction(
-            'shop',
-            'orders',
-            $this->getCartTokenValue(),
-            HTTPRequest::METHOD_PATCH,
-            'address'
-        );
-
-        $request->setContent($content);
-
-        $this->ordersClient->executeCustomRequest($request);
+        $this->ordersClient->buildUpdateRequest($this->getCartTokenValue());
+        $this->ordersClient->setRequestData($content);
+        $this->ordersClient->update();
     }
 
     private function getCart(): array
@@ -1203,17 +1244,12 @@ final class CheckoutContext implements Context
 
     private function getCartShippingMethods(array $cart): array
     {
-        $request = Request::customItemAction(
-            'shop',
-            'orders',
-            $cart['tokenValue'],
-            HTTPRequest::METHOD_GET,
-            sprintf('shipments/%s/methods', $cart['shipments'][0]['id'])
-        );
+        $this->shippingMethodsClient->index();
+        $this->shippingMethodsClient->addFilter('tokenValue', $cart['tokenValue']);
+        $this->shippingMethodsClient->addFilter('shipmentId', $cart['shipments'][0]['id']);
+        $this->shippingMethodsClient->filter();
 
-        $this->ordersClient->executeCustomRequest($request);
-
-        return $this->responseChecker->getCollection($this->ordersClient->getLastResponse());
+        return $this->responseChecker->getCollection($this->shippingMethodsClient->getLastResponse());
     }
 
     private function hasShippingMethod(ShippingMethodInterface $shippingMethod): bool
@@ -1251,17 +1287,12 @@ final class CheckoutContext implements Context
             return [];
         }
 
-        $request = Request::customItemAction(
-            'shop',
-            'orders',
-            $this->sharedStorage->get('cart_token'),
-            HTTPRequest::METHOD_GET,
-            sprintf('payments/%s/methods', $order->getLastPayment()->getId())
-        );
+        $this->paymentMethodsClient->index();
+        $this->paymentMethodsClient->addFilter('paymentId', $order->getLastPayment()->getId());
+        $this->paymentMethodsClient->addFilter('tokenValue', $order->getTokenValue());
+        $this->paymentMethodsClient->filter();
 
-        $this->ordersClient->executeCustomRequest($request);
-
-        return $this->responseChecker->getCollection($this->ordersClient->getLastResponse());
+        return $this->responseChecker->getCollection($this->paymentMethodsClient->getLastResponse());
     }
 
     private function hasProductWithNameAndQuantityInCart(string $productName, int $quantity): bool

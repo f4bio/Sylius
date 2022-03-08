@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Sylius\Bundle\ApiBundle\EventSubscriber;
 
 use ApiPlatform\Core\EventListener\EventPriorities;
+use Sylius\Component\Core\Event\ProductVariantCreated;
 use Sylius\Component\Core\Event\ProductVariantUpdated;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -24,11 +25,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class ProductVariantEventSubscriber implements EventSubscriberInterface
 {
-    private MessageBusInterface $eventBus;
-
-    public function __construct(MessageBusInterface $eventBus)
+    public function __construct(private MessageBusInterface $eventBus)
     {
-        $this->eventBus = $eventBus;
     }
 
     public static function getSubscribedEvents(): array
@@ -43,7 +41,17 @@ final class ProductVariantEventSubscriber implements EventSubscriberInterface
         $variant = $event->getControllerResult();
         $method = $event->getRequest()->getMethod();
 
-        if ($variant instanceof ProductVariantInterface && $method === Request::METHOD_PUT) {
+        if (!$variant instanceof ProductVariantInterface) {
+            return;
+        }
+
+        if ($method === Request::METHOD_POST) {
+            $this->eventBus->dispatch(new ProductVariantCreated($variant->getCode()));
+
+            return;
+        }
+
+        if ($method === Request::METHOD_PUT) {
             $this->eventBus->dispatch(new ProductVariantUpdated($variant->getCode()));
         }
     }

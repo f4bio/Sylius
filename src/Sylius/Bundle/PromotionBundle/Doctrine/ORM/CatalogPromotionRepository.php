@@ -21,21 +21,20 @@ class CatalogPromotionRepository extends EntityRepository implements CatalogProm
 {
     public function findByCriteria(iterable $criteria): array
     {
-        $queryBuilder = $this->createQueryBuilder('catalogPromotion');
+        $queryBuilder = $this->createQueryBuilder('o');
 
         /** @var CriteriaInterface $criterion */
         foreach ($criteria as $criterion) {
             $criterion->filterQueryBuilder($queryBuilder);
         }
 
-        return $queryBuilder->orderBy('catalogPromotion.priority', 'desc')->getQuery()->getResult();
-    }
-
-    public function findByCodes(array $codes): array
-    {
-        return $this->createQueryBuilder('catalogPromotion')
-            ->andWhere('catalogPromotion.code IN (:codes)')
-            ->setParameter('codes', $codes)
+        return $queryBuilder
+            ->addSelect('scopes')
+            ->addSelect('actions')
+            ->leftJoin('o.scopes', 'scopes')
+            ->leftJoin('o.actions', 'actions')
+            ->orderBy('o.exclusive', 'desc')
+            ->addOrderBy('o.priority', 'desc')
             ->getQuery()
             ->getResult()
         ;

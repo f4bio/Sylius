@@ -27,16 +27,12 @@ use Symfony\Component\Form\FormEvents;
 
 final class CatalogPromotionType extends AbstractResourceType
 {
-    private string $catalogPromotionTranslationType;
-
     public function __construct(
         string $dataClass,
         array $validationGroups,
-        string $catalogPromotionTranslationType
+        private string $catalogPromotionTranslationType
     ) {
         parent::__construct($dataClass, $validationGroups);
-
-        $this->catalogPromotionTranslationType = $catalogPromotionTranslationType;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -52,6 +48,7 @@ final class CatalogPromotionType extends AbstractResourceType
             ])
             ->add('enabled', CheckboxType::class, [
                 'label' => 'sylius.form.catalog_promotion.enabled',
+                'required' => false,
             ])
             ->add('priority', NumberType::class, [
                 'label' => 'sylius.form.catalog_promotion.priority',
@@ -61,13 +58,19 @@ final class CatalogPromotionType extends AbstractResourceType
                 'label' => 'sylius.form.catalog_promotion.start_date',
                 'date_widget' => 'single_text',
                 'time_widget' => 'single_text',
+                'with_seconds' => true,
                 'required' => false,
             ])
             ->add('endDate', DateTimeType::class, [
                 'label' => 'sylius.form.catalog_promotion.end_date',
                 'date_widget' => 'single_text',
                 'time_widget' => 'single_text',
+                'with_seconds' => true,
                 'required' => false,
+            ])
+            ->add('exclusive', CheckboxType::class, [
+              'label' => 'sylius.form.promotion.exclusive',
+              'required' => false,
             ])
             ->add('scopes', CollectionType::class, [
                 'label' => 'sylius.ui.scopes',
@@ -75,6 +78,7 @@ final class CatalogPromotionType extends AbstractResourceType
                 'allow_add' => true,
                 'allow_delete' => true,
                 'by_reference' => false,
+                'required' => false,
             ])
             ->add('actions', CollectionType::class, [
                 'label' => 'sylius.ui.actions',
@@ -82,6 +86,7 @@ final class CatalogPromotionType extends AbstractResourceType
                 'allow_add' => true,
                 'allow_delete' => true,
                 'by_reference' => false,
+                'required' => false,
             ])
         ;
 

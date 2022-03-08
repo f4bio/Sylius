@@ -25,21 +25,14 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class ProductAssociationTypeExampleFactory extends AbstractExampleFactory implements ExampleFactoryInterface
 {
-    private FactoryInterface $productAssociationTypeFactory;
-
-    private RepositoryInterface $localeRepository;
-
     private Generator $faker;
 
     private OptionsResolver $optionsResolver;
 
     public function __construct(
-        FactoryInterface $productAssociationTypeFactory,
-        RepositoryInterface $localeRepository
+        private FactoryInterface $productAssociationTypeFactory,
+        private RepositoryInterface $localeRepository
     ) {
-        $this->productAssociationTypeFactory = $productAssociationTypeFactory;
-        $this->localeRepository = $localeRepository;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -73,9 +66,7 @@ class ProductAssociationTypeExampleFactory extends AbstractExampleFactory implem
 
                 return $words;
             })
-            ->setDefault('code', function (Options $options): string {
-                return StringInflector::nameToCode($options['name']);
-            })
+            ->setDefault('code', fn(Options $options): string => StringInflector::nameToCode($options['name']))
         ;
     }
 
