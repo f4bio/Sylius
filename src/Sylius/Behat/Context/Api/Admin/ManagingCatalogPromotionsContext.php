@@ -18,15 +18,18 @@ use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
 use Sylius\Behat\Service\SharedStorageInterface;
-use Sylius\Component\Core\Formatter\StringInflector;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Calculator\FixedDiscountPriceCalculator;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Calculator\PercentageDiscountPriceCalculator;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForProductScopeVariantChecker;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForTaxonsScopeVariantChecker;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForVariantsScopeVariantChecker;
 use Sylius\Component\Core\Model\CatalogPromotionInterface;
-use Sylius\Component\Core\Model\CatalogPromotionScopeInterface;
+use Sylius\Component\Promotion\Event\CatalogPromotionCreated;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
-use Sylius\Component\Promotion\Event\CatalogPromotionUpdated;
-use Sylius\Component\Promotion\Model\CatalogPromotionActionInterface;
+use Sylius\Component\Core\Formatter\StringInflector;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Webmozart\Assert\Assert;
 
@@ -64,6 +67,18 @@ final class ManagingCatalogPromotionsContext implements Context
         $this->client->buildCreateRequest();
         $this->client->addRequestData('code', $code);
         $this->client->addRequestData('name', $name);
+        $this->client->create();
+    }
+
+    /**
+     * @When I create a new catalog promotion with :code code and :name name and :priority priority
+     */
+    public function iCreateANewCatalogPromotionWithCodeAndNameAndPriority(string $code, string $name, int $priority): void
+    {
+        $this->client->buildCreateRequest();
+        $this->client->addRequestData('code', $code);
+        $this->client->addRequestData('name', $name);
+        $this->client->addRequestData('priority', $priority);
         $this->client->create();
     }
 
@@ -197,9 +212,26 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddActionThatGivesPercentageDiscount(float $amount): void
     {
         $actions = [[
-            'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+            'type' => PercentageDiscountPriceCalculator::TYPE,
             'configuration' => [
                 'amount' => $amount
+            ],
+        ]];
+
+        $this->client->addRequestData('actions', $actions);
+    }
+
+    /**
+     * @When /^I add action that gives ("[^"]+") of fixed discount in the ("[^"]+" channel)$/
+     */
+    public function iAddActionThatGivesFixedDiscount(int $amount, ChannelInterface $channel): void
+    {
+        $actions = [[
+            'type' => FixedDiscountPriceCalculator::TYPE,
+            'configuration' => [
+                $channel->getCode() => [
+                    'amount' => $amount
+                ],
             ],
         ]];
 
@@ -214,7 +246,7 @@ final class ManagingCatalogPromotionsContext implements Context
         $actions = $this->client->getContent()['actions'];
 
         $additionalAction = [[
-            'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+            'type' => PercentageDiscountPriceCalculator::TYPE,
             'configuration' => [
                 'amount' => $amount
             ],
@@ -233,7 +265,7 @@ final class ManagingCatalogPromotionsContext implements Context
         $scopes = $this->client->getContent()['scopes'];
 
         $additionalScope = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+            'type' => InForVariantsScopeVariantChecker::TYPE,
             'configuration' => [
                 'variants' => [$productVariant->getCode()],
             ],
@@ -270,7 +302,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddInvalidPercentageDiscountActionWithNonNumberInAmount(): void
     {
         $actions = [[
-            'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+            'type' => PercentageDiscountPriceCalculator::TYPE,
             'configuration' => [
                 'amount' => 'text'
             ],
@@ -329,7 +361,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddScopeThatAppliesOnVariants(ProductVariantInterface $firstVariant, ProductVariantInterface $secondVariant): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+            'type' => InForVariantsScopeVariantChecker::TYPE,
             'configuration' => [
                 'variants' => [
                     $firstVariant->getCode(),
@@ -347,7 +379,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddCatalogPromotionScopeForTaxonWithoutTaxons(): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_TAXONS,
+            'type' => InForTaxonsScopeVariantChecker::TYPE,
             'configuration' => ['taxons' => []],
         ]];
 
@@ -360,7 +392,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddCatalogPromotionScopeForTaxonWithNonexistentTaxons(): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_TAXONS,
+            'type' => InForTaxonsScopeVariantChecker::TYPE,
             'configuration' => [
                 'taxons' => [
                     'BAD_TAXON',
@@ -378,7 +410,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddCatalogPromotionScopeForProductWithoutProducts(): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS,
+            'type' => InForProductScopeVariantChecker::TYPE,
             'configuration' => ['products' => []],
         ]];
 
@@ -391,7 +423,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddCatalogPromotionScopeForProductsWithNonexistentProducts(): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS,
+            'type' => InForProductScopeVariantChecker::TYPE,
             'configuration' => [
                 'products' => [
                     'BAD_PRODUCT',
@@ -409,7 +441,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddScopeThatAppliesOnTaxon(TaxonInterface $taxon): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_TAXONS,
+            'type' => InForTaxonsScopeVariantChecker::TYPE,
             'configuration' => [
                 'taxons' => [$taxon->getCode()]
             ],
@@ -424,13 +456,39 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddScopeThatAppliesOnProduct(ProductInterface $product): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS,
+            'type' => InForProductScopeVariantChecker::TYPE,
             'configuration' => [
                 'products' => [$product->getCode()]
             ],
         ]];
 
         $this->client->addRequestData('scopes', $scopes);
+    }
+
+    /**
+     * @When /^I create an exclusive "([^"]+)" catalog promotion with ([^"]+) priority that applies on ("[^"]+" product) and reduces price by ("[^"]+") in ("[^"]+" channel)$/
+     */
+    public function iCreateAnExclusiveCatalogPromotionWithCodeAndNameAndPriorityThatAppliesOnProductAndReducesPriceByInChannel(
+        string $name,
+        int $priority,
+        ProductInterface $product,
+        float $discount,
+        ChannelInterface $channel
+    ): void {
+        $this->createCatalogPromotion($name, $priority, true, $product, $discount, $channel);
+    }
+
+    /**
+     * @When /^I create a "([^"]+)" catalog promotion with ([^"]+) priority that applies on ("[^"]+" product) and reduces price by ("[^"]+") in ("[^"]+" channel)$/
+     */
+    public function iCreateACatalogPromotionWithCodeAndNameAndPriorityThatAppliesOnProductAndReducesPriceByInChannel(
+        string $name,
+        int $priority,
+        ProductInterface $product,
+        float $discount,
+        ChannelInterface $channel
+    ): void {
+        $this->createCatalogPromotion($name, $priority, false, $product, $discount, $channel);
     }
 
     /**
@@ -452,7 +510,7 @@ final class ManagingCatalogPromotionsContext implements Context
     ): void {
         $this->client->buildUpdateRequest($catalogPromotion->getCode());
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+            'type' => InForVariantsScopeVariantChecker::TYPE,
             'configuration' => [
                 'variants' => [
                     $productVariant->getCode(),
@@ -475,7 +533,7 @@ final class ManagingCatalogPromotionsContext implements Context
 
         $content = $this->client->getContent();
         unset($content['scopes'][0]['configuration']['variants']);
-        $content['scopes'][0]['type'] = CatalogPromotionScopeInterface::TYPE_FOR_TAXONS;
+        $content['scopes'][0]['type'] = InForTaxonsScopeVariantChecker::TYPE;
         $content['scopes'][0]['configuration']['taxons'] = [$taxon->getCode()];
 
         $this->client->setRequestData($content);;
@@ -494,7 +552,7 @@ final class ManagingCatalogPromotionsContext implements Context
 
         $content = $this->client->getContent();
         unset($content['scopes'][0]['configuration']['variants']);
-        $content['scopes'][0]['type'] = CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS;
+        $content['scopes'][0]['type'] = InForProductScopeVariantChecker::TYPE;
         $content['scopes'][0]['configuration']['products'] = [$product->getCode()];
 
         $this->client->setRequestData($content);;
@@ -525,7 +583,7 @@ final class ManagingCatalogPromotionsContext implements Context
     {
         $this->client->buildUpdateRequest($catalogPromotion->getCode());
         $scopes = [[
-            'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+            'type' => PercentageDiscountPriceCalculator::TYPE,
             'configuration' => [
                 'amount' => $amount,
             ],
@@ -533,6 +591,73 @@ final class ManagingCatalogPromotionsContext implements Context
 
         $this->client->updateRequestData(['actions' => $scopes]);
         $this->client->update();
+    }
+
+    /**
+     * @When /^I edit ("[^"]+" catalog promotion) to have ("[^"]+") of fixed discount in the ("[^"]+" channel)$/
+     */
+    public function iEditCatalogPromotionToHaveFixedDiscountInTheChannel(
+        CatalogPromotionInterface $catalogPromotion,
+        int $amount,
+        ChannelInterface $channel
+    ): void {
+        $this->client->buildUpdateRequest($catalogPromotion->getCode());
+        $content = $this->client->getContent();
+
+        $content['actions'] = [[
+            'type' => FixedDiscountPriceCalculator::TYPE,
+            'configuration' => [$channel->getCode() => ['amount' => $amount]],
+        ]];
+
+        $this->client->setRequestData($content);
+        $this->client->update();
+    }
+
+    /**
+     * @When /^I edit it to have ("[^"]+") of fixed discount in the ("[^"]+" channel)$/
+     */
+    public function iEditItToHaveFixedDiscountInTheChannel(
+        int $amount,
+        ChannelInterface $channel
+    ): void {
+        $content = $this->client->getContent();
+
+        $content['actions'] = [[
+            'type' => FixedDiscountPriceCalculator::TYPE,
+            'configuration' => [$channel->getCode() => ['amount' => $amount]],
+        ]];
+
+        $this->client->setRequestData($content);
+    }
+
+    /**
+     * @When I edit it to have empty amount of percentage discount
+     */
+    public function iEditItToHaveEmptyPercentageDiscount(): void
+    {
+        $content = $this->client->getContent();
+
+        $content['actions'] = [[
+            'type' => PercentageDiscountPriceCalculator::TYPE,
+            'configuration' => ['amount' => ''],
+        ]];
+
+        $this->client->setRequestData($content);
+    }
+
+    /**
+     * @When I edit it to have empty amount of fixed discount in the :channel channel
+     */
+    public function iEditItToHaveEmptyFixedDiscountInTheChannel(ChannelInterface $channel): void
+    {
+        $content = $this->client->getContent();
+
+        $content['actions'] = [[
+            'type' => FixedDiscountPriceCalculator::TYPE,
+            'configuration' => [$channel->getCode() => ['amount' => '']],
+        ]];
+
+        $this->client->setRequestData($content);
     }
 
     /**
@@ -556,7 +681,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddForVariantsScopeWithTheWrongConfiguration(): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+            'type' => InForVariantsScopeVariantChecker::TYPE,
             'configuration' => [
                 'variants' => ['wrong_code'],
             ],
@@ -571,7 +696,7 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddForVariantsScopeWithoutVariantsConfigured(): void
     {
         $scopes = [[
-            'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+            'type' => InForVariantsScopeVariantChecker::TYPE,
             'configuration' => [
                 'variants' => [],
             ],
@@ -586,8 +711,48 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddPercentageDiscountActionWithoutAmountConfigured(): void
     {
         $actions = [[
-            'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+            'type' => PercentageDiscountPriceCalculator::TYPE,
             'configuration' => [],
+        ]];
+
+        $this->client->addRequestData('actions', $actions);
+    }
+
+    /**
+     * @When I add fixed discount action without amount configured
+     */
+    public function iAddFixedDiscountActionWithoutAmountConfigured(): void
+    {
+        $actions = [[
+            'type' => FixedDiscountPriceCalculator::TYPE,
+            'configuration' => ['channel' => ['amount' => null]],
+        ]];
+
+        $this->client->addRequestData('actions', $actions);
+    }
+
+    /**
+     * @When I add invalid fixed discount action with non number in amount for the :channel channel
+     */
+    public function iAddInvalidFixedDiscountActionWithNonNumberInAmountForTheChannel(
+        ChannelInterface $channel
+    ): void {
+        $actions = [[
+            'type' => FixedDiscountPriceCalculator::TYPE,
+            'configuration' => [$channel->getCode() => ['amount' => 'wrong value']],
+        ]];
+
+        $this->client->addRequestData('actions', $actions);
+    }
+
+    /**
+     * @When I add invalid fixed discount action configured for nonexistent channel
+     */
+    public function iAddInvalidFixedDiscountActionConfiguredForNonexistentChannel(): void
+    {
+        $actions = [[
+            'type' => FixedDiscountPriceCalculator::TYPE,
+            'configuration' => ['nonexistent_action' => ['amount' => 1000]],
         ]];
 
         $this->client->addRequestData('actions', $actions);
@@ -704,6 +869,44 @@ final class ManagingCatalogPromotionsContext implements Context
     }
 
     /**
+     * @Then /^the ("[^"]+" catalog promotion) should have ("[^"]+") of fixed discount in the ("[^"]+" channel)$/
+     */
+    public function theCatalogPromotionShouldHaveFixedDiscountInTheChannel(
+        CatalogPromotionInterface $catalogPromotion,
+        int $amount,
+        ChannelInterface $channel
+    ): void {
+        $catalogPromotion = $this->responseChecker->getCollection($this->client->getLastResponse())[0];
+
+        Assert::same($catalogPromotion['actions'][0]['configuration'][$channel->getCode()]['amount'], $amount);
+    }
+
+    /**
+     * @Then /^this catalog promotion should have ("[^"]+") of fixed discount in the ("[^"]+" channel)$/
+     * @Then /^it should reduce price by ("[^"]+") in the ("[^"]+" channel)$/
+     */
+    public function thisCatalogPromotionShouldHaveFixedDiscountInTheChannel(int $amount, ChannelInterface $channel): void
+    {
+        $catalogPromotionActions = $this->responseChecker->getValue($this->client->getLastResponse(), 'actions');
+
+        foreach ($catalogPromotionActions as $catalogPromotionAction) {
+            if (
+                $catalogPromotionAction['type'] === FixedDiscountPriceCalculator::TYPE &&
+                $catalogPromotionAction['configuration'][$channel->getCode()]['amount'] === $amount
+            ) {
+                return;
+            }
+        }
+
+        throw new \Exception(sprintf(
+            'There is no "%s" action with %d for "%s" channel',
+            FixedDiscountPriceCalculator::TYPE,
+            $amount,
+            $channel->getName()
+        ));
+    }
+
+    /**
      * @Then /^this catalog promotion should have ("[^"]+") percentage discount$/
      * @Then /^it should reduce price by ("[^"]+")$/
      */
@@ -713,13 +916,13 @@ final class ManagingCatalogPromotionsContext implements Context
         foreach ($catalogPromotionActions as $catalogPromotionAction) {
             if (
                 $catalogPromotionAction['configuration']['amount'] === $amount &&
-                $catalogPromotionAction['type'] === CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT
+                $catalogPromotionAction['type'] === PercentageDiscountPriceCalculator::TYPE
             ) {
                 return;
             }
         }
 
-        throw new \Exception(sprintf('There is no "%s" action with %f', CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT, $amount));
+        throw new \Exception(sprintf('There is no "%s" action with %f', PercentageDiscountPriceCalculator::TYPE, $amount));
     }
 
     /**
@@ -773,11 +976,32 @@ final class ManagingCatalogPromotionsContext implements Context
         Assert::true(
             $this->responseChecker->hasItemWithValues(
                 $response,
-                ['name' => $catalogPromotion->getName(), 'startDate' => $startDate.' 00:00:00', 'endDate' => $endDate.' 00:00:00']
+                ['name' => $catalogPromotion->getName(), 'startDate' => $startDate . ':00', 'endDate' => $endDate . ':00']
             ),
             sprintf(
                 'Cannot find catalog promotions with name "%s" operating between "%s" and "%s" in the list',
                 $catalogPromotion->getName(), $startDate, $endDate
+            )
+        );
+    }
+
+    /**
+     * @Then the catalog promotion named :catalogPromotion should have priority :priority
+     */
+    public function theCatalogPromotionNamedShouldHavePriority(
+        CatalogPromotionInterface $catalogPromotion,
+        int $priority
+    ): void {
+        $response = $this->client->index();
+
+        Assert::true(
+            $this->responseChecker->hasItemWithValues(
+                $response,
+                ['name' => $catalogPromotion->getName(), 'priority' => $priority]
+            ),
+            sprintf(
+                'Cannot find catalog promotions with name "%s" and priority "%s" in the list',
+                $catalogPromotion->getName(), $priority
             )
         );
     }
@@ -881,7 +1105,7 @@ final class ManagingCatalogPromotionsContext implements Context
      */
     public function thisCatalogPromotionShouldBeUsable(): void
     {
-        Assert::isInstanceOf($this->messageBus->getDispatchedMessages()[0]['message'], CatalogPromotionUpdated::class);
+        Assert::isInstanceOf($this->messageBus->getDispatchedMessages()[0]['message'], CatalogPromotionCreated::class);
     }
 
     /**
@@ -939,6 +1163,16 @@ final class ManagingCatalogPromotionsContext implements Context
             $this->responseChecker->isUpdateSuccessful($this->client->getLastResponse()),
             'Catalog promotion could not be edited'
         );
+    }
+
+    /**
+     * @Then I should be notified that not all channels are filled
+     */
+    public function iShouldBeNotifiedThatNotAllChannelsAreFilled(): void
+    {
+        $response = $this->responseChecker->getResponseContent($this->client->getLastResponse());
+
+        Assert::same($response['violations'][0]['message'], 'Configuration for one of the required channels is not provided.');
     }
 
     /**
@@ -1126,12 +1360,35 @@ final class ManagingCatalogPromotionsContext implements Context
 
     /**
      * @Then I should be notified that a discount amount should be a number and cannot be empty
+     * @Then I should be notified that a discount amount is not valid
      */
     public function iShouldBeNotifiedThatDiscountAmountShouldBeNumber(): void
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
             'The percentage discount amount must be a number and can not be empty.'
+        );
+    }
+
+    /**
+     * @Then I should be notified that a discount amount should be configured for at least one channel
+     */
+    public function iShouldBeNotifiedThatADiscountAmountShouldBeConfiguredForAtLeasOneChannel(): void
+    {
+        Assert::contains(
+            $this->responseChecker->getError($this->client->getLastResponse()),
+            'Provided configuration contains errors. Please add the fixed discount amount that is a number greater than 0.'
+        );
+    }
+
+    /**
+     * @Then I should be notified that at least one of the provided channel codes does not exist
+     */
+    public function iShouldBeNotifiedThatAtLeastOneOfTheProvidedChannelCodesDoesNotExist(): void
+    {
+        Assert::contains(
+            $this->responseChecker->getError($this->client->getLastResponse()),
+            'Provided configuration contains errors. At least one of the provided channel codes does not exist.'
         );
     }
 
@@ -1196,6 +1453,22 @@ final class ManagingCatalogPromotionsContext implements Context
     public function itsNameShouldBe(string $name): void
     {
         Assert::true($this->responseChecker->hasValue($this->client->getLastResponse(), 'name', $name));
+    }
+
+    /**
+     * @Given it should be exclusive
+     */
+    public function itShouldBeExclusive(): void
+    {
+        Assert::true($this->responseChecker->hasValue($this->client->getLastResponse(), 'exclusive', true));
+    }
+
+    /**
+     * @Given it should not be exclusive
+     */
+    public function itShouldNotBeExclusive(): void
+    {
+        Assert::false($this->responseChecker->hasValue($this->client->getLastResponse(), 'exclusive', true));
     }
 
     /**
@@ -1295,5 +1568,43 @@ final class ManagingCatalogPromotionsContext implements Context
         $this->client->update();
 
         $this->sharedStorage->set('catalog_promotion', $catalogPromotion);
+    }
+
+    private function createCatalogPromotion(
+        string $name,
+        int $priority,
+        bool $exclusive,
+        ProductInterface $product,
+        float $discount,
+        ChannelInterface $channel
+    ): void {
+        $this->client->buildCreateRequest();
+
+        $this->client->updateRequestData([
+            'code' => StringInflector::nameToCode($name),
+            'name' => $name,
+            'priority' => $priority,
+            'enabled' => true,
+            'channels' => [$this->iriConverter->getIriFromItem($channel)],
+            'exclusive' => $exclusive,
+            'translations' => ['en_US' => [
+                'locale' => 'en_US',
+                'label' => $name
+            ]],
+            'actions' => [[
+                'type' => PercentageDiscountPriceCalculator::TYPE,
+                'configuration' => [
+                    'amount' => $discount
+                ],
+            ]],
+            'scopes' => [[
+                'type' => InForProductScopeVariantChecker::TYPE,
+                'configuration' => [
+                    'products' => [$product->getCode()]
+                ],
+            ]],
+        ]);
+
+        $this->client->create();
     }
 }

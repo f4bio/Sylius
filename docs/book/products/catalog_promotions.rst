@@ -10,6 +10,9 @@ If you get used to :doc:`Cart Promotions </book/orders/cart-promotions>` this wi
 It is managed by combination of promotion scopes and actions, where you can specify on which e.g. products or taxons
 you can specify the Catalog Promotion with your custom actions as well as actions like percentage discount.
 
+It is possible to set start and end date for Catalog Promotions and their priority (Promotion will be applied on descending order of priority).
+You can also set exclusiveness of promotion, in this case only one catalog promotion will be applied - exclusive one with highest priority.
+
 You can assign the needed channels too.
 
 .. warning::
@@ -27,47 +30,47 @@ Catalog Promotion has a few basic parameters that represent it - a unique ``code
     The parameter ``code`` should contain only letters, numbers, dashes and underscores (like all codes in Sylius).
     We encourage you to use ``snake_case`` codes.
 
-.. code-block:: bash
+.. code-block:: javascript
 
     {
-        "code": "t_shirt_promotion" # unique
+        "code": "t_shirt_promotion" // unique
         "name": "T-shirt Promotion"
-        # ...
+        // ...
     }
 
 Rest of the fields are used for configuration:
 
 * **Channels** are used to define channels on which given promotion is applied:
 
-.. code-block:: bash
+.. code-block:: javascript
 
     {
-        #...
+        //...
         "channels": [
-            "/api/v2/admin/channels/FASHION_WEB", #IRI
+            "/api/v2/admin/channels/FASHION_WEB", //IRI
             "/api/v2/admin/channels/HOME_WEB"
         ]
-        # ...
+        // ...
     }
 
 * **Scopes** are used to define scopes on which the catalog promotion will work:
 
-.. code-block:: bash
+.. code-block:: javascript
 
     {
-        #...
+        //...
         "scopes": [
             {
                 "type": "for_variants",
                 "configuration": {
                     "variants": [
-                        "Everyday_white_basic_T_Shirt-variant-1", #Variant Code
+                        "Everyday_white_basic_T_Shirt-variant-1", //Variant Code
                         "Everyday_white_basic_T_Shirt-variant-4"
                     ]
                 }
             }
         ]
-        # ...
+        // ...
     }
 
 .. note::
@@ -79,36 +82,36 @@ For possible scopes see `Catalog Promotion Scopes configuration reference`_
 
 * **Actions** are used to defined what happens when the promotion is applied:
 
-.. code-block:: bash
+.. code-block:: javascript
 
     {
-        #...
+        //...
         "actions": [
             {
                 "type": "percentage_discount",
                 "configuration": {
-                    "amount": 0.5 #float
+                    "amount": 0.5 //float
                 }
             }
         ]
-        # ...
+        // ...
     }
 
 * **Translations** are used to define labels and descriptions for languages you are configuring:
 
-.. code-block:: bash
+.. code-block:: javascript
 
     {
-        #...
+        //...
         "translations": {
             "en_US": {
                 "label": "Summer discount",
                 "description": "The grass so green, the sun so bright. Life seems a dream, no worries in sight.",
-                "locale": "en_US" #Locale Code
+                "locale": "en_US" //Locale Code
                 }
             }
         }
-        # ...
+        // ...
     }
 
 How to create a Catalog Promotion?
@@ -151,7 +154,7 @@ You can check if the catalog promotion exists by using GET endpoint
 .. code-block:: php
 
    /** @var CatalogPromotionInterface $promotion */
-   $promotion = $this->container->get('sylius.factory.t_shirt_promotion')->createNew();
+   $promotion = $this->container->get('sylius.factory.catalog_promotion')->createNew();
 
    $promotion->setCode('t_shirt_promotion');
    $promotion->setName('T-shirt Promotion');
@@ -190,16 +193,16 @@ In API we will extend last command:
                 "variants": ["Everyday_white_basic_T_Shirt-variant-1", "Everyday_white_basic_T_Shirt-variant-4"]
               }
             }
-          ],
-          "actions": [
+        ],
+        "actions": [
             {
               "type": "percentage_discount",
               "configuration": {
                 "amount": 0.5
               }
             }
-          ],
-          "translations": {
+        ],
+        "translations": {
             "en_US": {
               "label": "T-shirt Promotion",
               "description": "T-shirt Promotion description",
@@ -227,18 +230,18 @@ We can also make it programmatically:
     $catalogPromotion->addChannel('FASHION_WEB');
 
     /** @var CatalogPromotionScopeInterface $catalogPromotionScope */
-    $catalogPromotionScope = $this->catalogPromotionScopeExampleFactory->create($scope);
+    $catalogPromotionScope = $this->container->get('sylius.factory.catalog_promotion_scope')->createNew();
     $catalogPromotionScope->setCatalogPromotion($catalogPromotion);
     $catalogPromotion->addScope($catalogPromotionScope);
 
     /** @var CatalogPromotionActionInterface $catalogPromotionAction */
-    $catalogPromotionAction = $this->catalogPromotionActionExampleFactory->create($action);
+    $catalogPromotionAction = $this->container->get('sylius.factory.catalog_promotion_action')->createNew();
     $catalogPromotionAction->setCatalogPromotion($catalogPromotion);
     $catalogPromotion->addAction($catalogPromotionAction);
 
     /** @var MessageBusInterface $eventBus */
     $eventBus = $this->container->get('sylius.event_bus');
-    $this->eventBus->dispatch(new CatalogPromotionUpdated($catalogPromotion->getCode()));
+    $this->eventBus->dispatch(new CatalogPromotionCreated($catalogPromotion->getCode()));
 
 And now you should be able to see created Catalog Promotion. You can check if it exists like in the last example (with GET endpoint).
 If you look into ``product-variant`` endpoint in shop you should see now that chosen variants have lowered price and added field ``appliedPromotions``:
@@ -248,13 +251,13 @@ If you look into ``product-variant`` endpoint in shop you should see now that ch
     curl -X 'GET' \
     'https://hostname/api/v2/shop/product-variant/Everyday_white_basic_T_Shirt-variant-1'
 
-.. code-block:: bash
+.. code-block:: javascript
 
-    # response content
+    // response content
     {
         "@context": "/api/v2/contexts/ProductVariant",
         "@id": "/api/v2/shop/product-variants/Everyday_white_basic_T_Shirt-variant-1",
-        # ...
+        // ...
         "price": 2000,
         "originalPrice": 4000,
         "appliedPromotions": {
@@ -268,7 +271,7 @@ If you look into ``product-variant`` endpoint in shop you should see now that ch
 
 .. note::
 
-    If you create a Catalog Promotion programmatically, remember to manually dispatch ``CatalogPromotionUpdated``
+    If you create a Catalog Promotion programmatically, remember to manually dispatch ``CatalogPromotionCreated``
 
 Catalog Promotion Scopes configuration reference
 ''''''''''''''''''''''''''''''''''''''''''''''''
@@ -289,6 +292,8 @@ Catalog Promotion Actions configuration reference
 +-------------------------------+--------------------------------------------------------------------+
 | Action type                   | Action Configuration Array                                         |
 +===============================+====================================================================+
+| ``fixed_discount``            | ``[$channelCode => ['amount' => $amountInteger]]``                 |
++-------------------------------+--------------------------------------------------------------------+
 | ``percentage_discount``       | ``['amount' => $amountFloat]``                                     |
 +-------------------------------+--------------------------------------------------------------------+
 
@@ -305,30 +310,46 @@ After changes in CatalogPromotion, we dispatch proper message with delay calcula
 
 .. warning::
 
-    To enable asynchronous Catalog Promotion, remember about running messenger consumer in a separate process, use the command: ``php bin/console messenger:consume async``
+    To enable asynchronous Catalog Promotion, remember about running messenger consumer in a separate process, use the command: ``php bin/console messenger:consume main``
     For more information check official `Symfony docs <https://symfony.com/doc/current/messenger.html#consuming-messages-running-the-worker>`_
 
 How the Catalog Promotions are applied?
 ---------------------------------------
 
-The Catalog Promotion application process utilises `API Platform events <https://api-platform.com/docs/core/events/>`_ for an API.
-and `Resource events </book/architecture/events>`_ for UI. When a new Promotion is created or the existing one is edited
-there are services that listen on proper events and dispatch ``CatalogPromotionUpdated`` event to event bus.
+The Catalog Promotion application process utilises `API Platform events <https://api-platform.com/docs/core/events/>`_ for an API
+and `Resource events </book/architecture/events>`_ for UI. When a new Promotion is created there are services that listen
+on proper events and dispatch ``CatalogPromotionCreated`` event to event bus. The behaviour looks similar when the existing
+one is edited, then the ``CatalogPromotionUpdated`` event is dispatched to event bus.
 
 This event is handled by `CatalogPromotionUpdateListener <https://github.com/Sylius/Sylius/blob/master/src/Sylius/Bundle/CoreBundle/Listener/CatalogPromotionUpdateListener.php>`_ which resolves the appropriate ``CatalogPromotion``.
-With the needed data and configuration from ``CatalogPromotion`` we can now process the ``Product`` and ``ProductVariant`` entities.
+With the needed data and configuration from ``CatalogPromotion`` we can now process the Product Catalog.
 
-The changes are first handled in `CatalogPromotionProcessor <https://github.com/Sylius/Sylius/blob/master/src/Sylius/Bundle/CoreBundle/Processor/CatalogPromotionProcessor.php>`_
-which inside uses the `CatalogPromotionApplicator <https://github.com/Sylius/Sylius/blob/master/src/Sylius/Bundle/CoreBundle/Applicator/CatalogPromotionApplicator.php>`_.
-
-The **CatalogPromotionProcessor**'s method ``process()`` is executed on the eligible items:
-
-* firstly it iterates over eligible items: ``Product Variants``,
-* then it calculates and applies the ``CatalogPromotionAction`` for given item
+Any changes in Catalog Promotion cause recalculations of entire Product Catalog (`BatchedApplyCatalogPromotionsOnVariantsCommandDispatcher <https://github.com/Sylius/Sylius/blob/master/src/Sylius/Bundle/CoreBundle/CommandDispatcher/BatchedApplyCatalogPromotionsOnVariantsCommandDispatcher.php>`_ is called, which dispatch events `ApplyCatalogPromotionsOnVariants <https://github.com/Sylius/Sylius/blob/master/src/Sylius/Bundle/CoreBundle/Command/ApplyCatalogPromotionsOnVariants.php>`_)
 
 .. note::
 
     If you want to reapply Catalog Promotion manually you can refer to the :ref:`How to create a Catalog Promotion Scope and Action? <how-to-create-a-catalog-promotion-scope-and-action>` section
+
+How to manage catalog promotion priority?
+-----------------------------------------
+
+The main feature of prioritizing catalog promotions is ensuring the uniqueness of priorities.
+While it is obvious at first glance, there are some extreme cases that will be covered below
+
+Creating a new catalog promotion while other catalog promotions already exist
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+- adding a catalog promotion with a priority higher than all existing catalog promotions does not change priority values
+- adding a catalog promotion with a priority lower than all existing ones increases the priority value of other catalog promotions by 1
+- adding a catalog promotion with a priority equal to one of the existing catalog promotions increases the priority value of all catalog promotions with a priority greater equal than created catalog promotion by 1, but has no effect on the others
+- adding a catalog promotion with a priority equal -1 sets a priority value of the created promotion one greater than the current highest value
+- adding a catalog promotion with some negative priority lower than -1 determines the position of the created catalog promotion starting count backward and if calculated index is already taken increases the priority value of all catalog promotions with a priority greater equal than calculated priority value by 1
+
+
+Updating an existing catalog promotion
+''''''''''''''''''''''''''''''''''''''
+
+- updating a catalog promotion priority to one of the existing catalog promotions decreases its priority value by 1
 
 Learn more
 ----------

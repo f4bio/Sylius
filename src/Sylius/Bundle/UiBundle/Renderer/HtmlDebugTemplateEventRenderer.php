@@ -21,14 +21,10 @@ use Sylius\Bundle\UiBundle\Registry\TemplateBlockRegistryInterface;
  */
 final class HtmlDebugTemplateEventRenderer implements TemplateEventRendererInterface
 {
-    private TemplateEventRendererInterface $templateEventRenderer;
-
-    private TemplateBlockRegistryInterface $templateBlockRegistry;
-
-    public function __construct(TemplateEventRendererInterface $templateEventRenderer, TemplateBlockRegistryInterface $templateBlockRegistry)
-    {
-        $this->templateEventRenderer = $templateEventRenderer;
-        $this->templateBlockRegistry = $templateBlockRegistry;
+    public function __construct(
+        private TemplateEventRendererInterface $templateEventRenderer,
+        private TemplateBlockRegistryInterface $templateBlockRegistry
+    ) {
     }
 
     public function render(array $eventNames, array $context = []): string
@@ -61,8 +57,6 @@ final class HtmlDebugTemplateEventRenderer implements TemplateEventRendererInter
      */
     private function shouldRenderHtmlDebug(array $templateBlocks): bool
     {
-        return count($templateBlocks) === 0 || count(array_filter($templateBlocks, static function (TemplateBlock $templateBlock): bool {
-            return strrpos($templateBlock->getTemplate(), '.html.twig') !== false;
-        })) >= 1;
+        return count($templateBlocks) === 0 || count(array_filter($templateBlocks, static fn(TemplateBlock $templateBlock): bool => strrpos($templateBlock->getTemplate(), '.html.twig') !== false)) >= 1;
     }
 }

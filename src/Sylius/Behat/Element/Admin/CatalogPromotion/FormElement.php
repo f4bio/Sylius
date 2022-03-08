@@ -16,6 +16,7 @@ namespace Sylius\Behat\Element\Admin\CatalogPromotion;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\ElementNotFoundException;
 use FriendsOfBehat\PageObjectExtension\Element\Element;
+use Sylius\Component\Core\Model\ChannelInterface;
 use Webmozart\Assert\Assert;
 
 final class FormElement extends Element implements FormElementInterface
@@ -48,6 +49,11 @@ final class FormElement extends Element implements FormElementInterface
     public function checkChannel(string $channelName): void
     {
         $this->getDocument()->checkField($channelName);
+    }
+
+    public function setExclusiveness(bool $isExclusive): void
+    {
+        $this->getElement('exclusive')->setValue($isExclusive);
     }
 
     public function uncheckChannel(string $channelName): void
@@ -86,6 +92,13 @@ final class FormElement extends Element implements FormElementInterface
         $lastScope->selectFieldOption('Type', $type);
     }
 
+    public function chooseActionType(string $type): void
+    {
+        $lastAction = $this->getElement('last_action');
+
+        $lastAction->selectFieldOption('Type', $type);
+    }
+
     public function chooseLastScopeCodes(array $codes): void
     {
         $lastScope = $this->getElement('last_scope');
@@ -98,6 +111,13 @@ final class FormElement extends Element implements FormElementInterface
         $lastAction = $this->getElement('last_action');
 
         $lastAction->find('css', 'input')->setValue($discount);
+    }
+
+    public function specifyLastActionDiscountForChannel(string $discount, ChannelInterface $channel): void
+    {
+        $lastAction = $this->getElement('last_action');
+
+        $lastAction->find('css', sprintf('.field:contains("%s") input', $channel->getName()))->setValue($discount);
     }
 
     public function getFieldValueInLocale(string $field, string $localeCode): string
@@ -119,6 +139,13 @@ final class FormElement extends Element implements FormElementInterface
         return $lastAction->find('css', 'input')->getValue();
     }
 
+    public function getLastActionFixedDiscount(ChannelInterface $channel): string
+    {
+        $lastAction = $this->getElement('last_action');
+
+        return $lastAction->find('css', 'input')->getValue();
+    }
+
     public function getValidationMessage(): string
     {
         $foundElement = $this->getDocument()->find('css', '.sylius-validation-error');
@@ -128,6 +155,33 @@ final class FormElement extends Element implements FormElementInterface
         }
 
         return $foundElement->getText();
+    }
+
+    public function hasValidationMessage(string $message): bool
+    {
+        $validationElements = $this->getDocument()->findAll('css', '.sylius-validation-error');
+
+        foreach ($validationElements as $validationElement) {
+            if ($validationElement->getText() === $message) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function hasOnlyOneValidationMessage(string $message): bool
+    {
+        $validationElements = $this->getDocument()->findAll('css', '.sylius-validation-error');
+
+        $counter = 0;
+        foreach ($validationElements as $validationElement) {
+            if ($validationElement->getText() === $message) {
+                ++$counter;
+            }
+        }
+
+        return $counter === 1;
     }
 
     public function removeAllActions(): void
@@ -156,6 +210,7 @@ final class FormElement extends Element implements FormElementInterface
             'add_scope_button' => '#scopes [data-form-collection="add"]',
             'description' => '#sylius_catalog_promotion_translations_%localeCode%_description',
             'enabled' => '#sylius_catalog_promotion_enabled',
+            'exclusive' => '#sylius_catalog_promotion_exclusive',
             'end_date' => '#sylius_catalog_promotion_endDate_date',
             'label' => '#sylius_catalog_promotion_translations_%localeCode%_label',
             'last_action' => '#actions [data-form-collection="item"]:last-child',

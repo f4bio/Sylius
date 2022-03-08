@@ -27,29 +27,16 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class TaxonExampleFactory extends AbstractExampleFactory implements ExampleFactoryInterface
 {
-    private FactoryInterface $taxonFactory;
-
-    private TaxonRepositoryInterface $taxonRepository;
-
-    private RepositoryInterface $localeRepository;
-
     private Generator $faker;
-
-    private TaxonSlugGeneratorInterface $taxonSlugGenerator;
 
     private OptionsResolver $optionsResolver;
 
     public function __construct(
-        FactoryInterface $taxonFactory,
-        TaxonRepositoryInterface $taxonRepository,
-        RepositoryInterface $localeRepository,
-        TaxonSlugGeneratorInterface $taxonSlugGenerator
+        private FactoryInterface $taxonFactory,
+        private TaxonRepositoryInterface $taxonRepository,
+        private RepositoryInterface $localeRepository,
+        private TaxonSlugGeneratorInterface $taxonSlugGenerator
     ) {
-        $this->taxonFactory = $taxonFactory;
-        $this->taxonRepository = $taxonRepository;
-        $this->localeRepository = $localeRepository;
-        $this->taxonSlugGenerator = $taxonSlugGenerator;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -117,13 +104,9 @@ class TaxonExampleFactory extends AbstractExampleFactory implements ExampleFacto
 
                 return $words;
             })
-            ->setDefault('code', function (Options $options): string {
-                return StringInflector::nameToCode($options['name']);
-            })
+            ->setDefault('code', fn(Options $options): string => StringInflector::nameToCode($options['name']))
             ->setDefault('slug', null)
-            ->setDefault('description', function (Options $options): string {
-                return $this->faker->paragraph;
-            })
+            ->setDefault('description', fn(Options $options): string => $this->faker->paragraph)
             ->setDefault('translations', [])
             ->setAllowedTypes('translations', ['array'])
             ->setDefault('children', [])

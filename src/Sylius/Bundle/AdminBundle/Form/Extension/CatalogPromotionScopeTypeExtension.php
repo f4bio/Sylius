@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the Sylius package.
+ *
+ * (c) Paweł Jędrzejewski
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 
 namespace Sylius\Bundle\AdminBundle\Form\Extension;
@@ -16,16 +25,12 @@ final class CatalogPromotionScopeTypeExtension extends AbstractTypeExtension
 
     private array $scopeConfigurationTypes;
 
-    private Environment $twig;
-
-    public function __construct(iterable $scopeConfigurationTypes, Environment $twig)
+    public function __construct(iterable $scopeConfigurationTypes, private Environment $twig)
     {
         foreach ($scopeConfigurationTypes as $type => $formType) {
-            $this->scopeConfigurationTypes[$type] = get_class($formType);
+            $this->scopeConfigurationTypes[$type] = $formType::class;
             $this->scopeTypes['sylius.form.catalog_promotion.scope.'.$type] = $type;
         }
-
-        $this->twig = $twig;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void

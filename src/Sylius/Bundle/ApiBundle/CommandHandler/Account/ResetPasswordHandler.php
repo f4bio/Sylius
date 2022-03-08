@@ -24,20 +24,11 @@ use Webmozart\Assert\Assert;
 /** @experimental */
 final class ResetPasswordHandler implements MessageHandlerInterface
 {
-    private UserRepositoryInterface $userRepository;
-
-    private MetadataInterface $metadata;
-
-    private PasswordUpdaterInterface $passwordUpdater;
-
     public function __construct(
-        UserRepositoryInterface $userRepository,
-        MetadataInterface $metadata,
-        PasswordUpdaterInterface $passwordUpdater
+        private UserRepositoryInterface $userRepository,
+        private MetadataInterface $metadata,
+        private PasswordUpdaterInterface $passwordUpdater
     ) {
-        $this->userRepository = $userRepository;
-        $this->metadata = $metadata;
-        $this->passwordUpdater = $passwordUpdater;
     }
 
     public function __invoke(ResetPassword $command): void
@@ -45,17 +36,13 @@ final class ResetPasswordHandler implements MessageHandlerInterface
         /** @var ShopUserInterface|null $user */
         $user = $this->userRepository->findOneBy(['passwordResetToken' => $command->resetPasswordToken]);
 
-        Assert::notNull($user);
+        Assert::notNull($user, 'No user found with reset token: ' . $command->resetPasswordToken);
 
         $resetting = $this->metadata->getParameter('resetting');
         $lifetime = new \DateInterval($resetting['token']['ttl']);
 
         if (!$user->isPasswordRequestNonExpired($lifetime)) {
             throw new \InvalidArgumentException('Password reset token has expired');
-        }
-
-        if ($command->resetPasswordToken !== $user->getPasswordResetToken()) {
-            throw new \InvalidArgumentException('Password reset token does not match.');
         }
 
         $user->setPlainPassword($command->newPassword);

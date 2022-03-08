@@ -26,7 +26,7 @@
             <tag name="api_platform.filter" />
         </service>
 
-        <service id="sylius.api.filter_archived_shipping_methods" parent="api_platform.doctrine.orm.exists_filter" public="true">
+        <service id="sylius.api.archived_shipping_methods_filter" parent="api_platform.doctrine.orm.exists_filter" public="true">
             <argument type="collection">
                 <argument key="archivedAt">false</argument>
             </argument>
@@ -40,9 +40,13 @@
             <tag name="api_platform.filter" />
         </service>
 
-        <service id="Sylius\Bundle\ApiBundle\Filter\TaxonFilter" public="true">
+        <service id="Sylius\Bundle\ApiBundle\Filter\Doctrine\TaxonFilter" public="true">
             <argument type="service" id="doctrine" />
             <argument type="service" id="api_platform.iri_converter" />
+            <tag name="api_platform.filter" />
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Filter\ShippingMethodFilter" public="true">
             <tag name="api_platform.filter" />
         </service>
 
@@ -104,24 +108,28 @@
             <tag name="api_platform.filter" />
         </service>
 
-        <service id="Sylius\Bundle\ApiBundle\Doctrine\Filter\ExchangeRateFilter" public="true">
+        <service id="Sylius\Bundle\ApiBundle\Filter\Doctrine\ExchangeRateFilter" public="true">
             <argument type="service" id="doctrine" />
             <tag name="api_platform.filter" />
         </service>
 
-        <service id="Sylius\Bundle\ApiBundle\Doctrine\Filter\TranslationOrderNameAndLocaleFilter" public="true">
+        <service id="Sylius\Bundle\ApiBundle\Filter\Doctrine\TranslationOrderNameAndLocaleFilter" public="true">
             <argument type="service" id="doctrine" />
             <tag name="api_platform.filter" />
         </service>
 
-        <service id="Sylius\Bundle\ApiBundle\Doctrine\Filter\ProductVariantOptionValueFilter" public="true">
+        <service id="Sylius\Bundle\ApiBundle\Filter\Doctrine\ProductVariantOptionValueFilter" public="true">
             <argument type="service" id="api_platform.iri_converter" />
             <argument type="service" id="doctrine" />
             <tag name="api_platform.filter" />
         </service>
 
-        <service id="Sylius\Bundle\ApiBundle\Doctrine\Filter\ProductPriceOrderFilter" public="true">
+        <service id="Sylius\Bundle\ApiBundle\Filter\Doctrine\ProductPriceOrderFilter" public="true">
             <argument type="service" id="doctrine" />
+            <tag name="api_platform.filter" />
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Filter\PaymentMethodFilter" public="true">
             <tag name="api_platform.filter" />
         </service>
     </services>

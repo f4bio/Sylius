@@ -76,12 +76,11 @@ Feature: Editing catalog promotion
         Then I should be notified that it has been successfully edited
         And this catalog promotion should have "40%" percentage discount
 
-    @api @ui
-    Scenario: Being unable to edit catalog promotion if it is currently being processed
-        Given the catalog promotion "Christmas sale" is currently being processed
-        When I try to rename the "Christmas sale" catalog promotion to "Black Friday"
-        Then I should not be able to edit it due to wrong state
-        And this catalog promotion name should still be "Christmas sale"
+    @api @ui @javascript
+    Scenario: Editing catalog promotion action to be a fixed discount
+        When I edit "Christmas sale" catalog promotion to have "$10.00" of fixed discount in the "United States" channel
+        Then I should be notified that it has been successfully edited
+        And this catalog promotion should have "$10.00" of fixed discount in the "United States" channel
 
     @api @ui
     Scenario: Being unable to change end date to earlier then start date
@@ -90,3 +89,34 @@ Feature: Editing catalog promotion
         And I try to change its end date to "2021-12-15"
         And I save my changes
         Then I should get information that the end date cannot be set before start date
+
+    @api @ui @javascript
+    Scenario: Receiving error message after not filling price for all channels
+        Given the store operates on another channel named "Poland"
+        When I want to modify a catalog promotion "Christmas sale"
+        And I edit it to have "$10.00" of fixed discount in the "United States" channel
+        And I make it available in channel "Poland"
+        And I save my changes
+        Then I should be notified that not all channels are filled
+
+    @api @ui @javascript
+    Scenario: Receiving error message after not filling percentage value for percentage discount
+        When I want to modify a catalog promotion "Christmas sale"
+        And I edit it to have empty amount of percentage discount
+        And I save my changes
+        Then I should be notified that a discount amount should be a number and cannot be empty
+
+    @api @ui @javascript
+    Scenario: Editing catalog promotion action to be a percentage discount and not filling amount
+        Given there is a catalog promotion "Winter sale" that reduces price by fixed "$10.00" in the "United States" channel and applies on "T-Shirt" product
+        When I want to modify a catalog promotion "Christmas sale"
+        And I edit it to have empty amount of percentage discount
+        And I save my changes
+        Then I should be notified that a discount amount should be a number and cannot be empty
+
+    @api @ui @javascript
+    Scenario: Editing catalog promotion action to be a fixed discount and not filling amount
+        When I want to modify a catalog promotion "Christmas sale"
+        And I edit it to have empty amount of fixed discount in the "United States" channel
+        And I save my changes
+        Then I should be notified that a discount amount should be configured for at least one channel

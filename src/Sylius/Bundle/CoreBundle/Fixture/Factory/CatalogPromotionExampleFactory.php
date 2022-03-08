@@ -16,7 +16,6 @@ namespace Sylius\Bundle\CoreBundle\Fixture\Factory;
 use Faker\Factory;
 use Faker\Generator;
 use Sylius\Bundle\CoreBundle\Fixture\OptionsResolver\LazyOption;
-use Sylius\Bundle\CoreBundle\Processor\CatalogPromotionProcessorInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Formatter\StringInflector;
 use Sylius\Component\Core\Model\CatalogPromotionInterface;
@@ -30,36 +29,17 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class CatalogPromotionExampleFactory extends AbstractExampleFactory implements ExampleFactoryInterface
 {
-    private FactoryInterface $catalogPromotionFactory;
-
-    private RepositoryInterface $localeRepository;
-
-    private ChannelRepositoryInterface $channelRepository;
-
-    private ExampleFactoryInterface $catalogPromotionScopeExampleFactory;
-
-    private ExampleFactoryInterface $catalogPromotionActionExampleFactory;
-
-    private CatalogPromotionProcessorInterface $catalogPromotionProcessor;
-
     private Generator $faker;
 
     private OptionsResolver $optionsResolver;
 
     public function __construct(
-        FactoryInterface $catalogPromotionFactory,
-        RepositoryInterface $localeRepository,
-        ChannelRepositoryInterface $channelRepository,
-        ExampleFactoryInterface $catalogPromotionScopeExampleFactory,
-        ExampleFactoryInterface $catalogPromotionActionExampleFactory,
-        CatalogPromotionProcessorInterface $catalogPromotionProcessor
+        private FactoryInterface $catalogPromotionFactory,
+        private RepositoryInterface $localeRepository,
+        private ChannelRepositoryInterface $channelRepository,
+        private ExampleFactoryInterface $catalogPromotionScopeExampleFactory,
+        private ExampleFactoryInterface $catalogPromotionActionExampleFactory
     ) {
-        $this->catalogPromotionFactory = $catalogPromotionFactory;
-        $this->localeRepository = $localeRepository;
-        $this->channelRepository = $channelRepository;
-        $this->catalogPromotionScopeExampleFactory = $catalogPromotionScopeExampleFactory;
-        $this->catalogPromotionActionExampleFactory = $catalogPromotionActionExampleFactory;
-        $this->catalogPromotionProcessor = $catalogPromotionProcessor;
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -74,7 +54,18 @@ class CatalogPromotionExampleFactory extends AbstractExampleFactory implements E
         $catalogPromotion = $this->catalogPromotionFactory->createNew();
         $catalogPromotion->setCode($options['code']);
         $catalogPromotion->setName($options['name']);
+
+        if (isset($options['start_date'])) {
+            $catalogPromotion->setStartDate(new \DateTime($options['start_date']));
+        }
+
+        if (isset($options['end_date'])) {
+            $catalogPromotion->setEndDate(new \DateTime($options['end_date']));
+        }
+
+        $catalogPromotion->setEnabled($options['enabled']);
         $catalogPromotion->setPriority($options['priority'] ?? 0);
+        $catalogPromotion->setExclusive($options['exclusive'] ?? false);
 
         foreach ($this->getLocales() as $localeCode) {
             $catalogPromotion->setCurrentLocale($localeCode);
@@ -106,17 +97,13 @@ class CatalogPromotionExampleFactory extends AbstractExampleFactory implements E
             }
         }
 
-        $this->catalogPromotionProcessor->process($catalogPromotion);
-
         return $catalogPromotion;
     }
 
     protected function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefault('code', function (Options $options): string {
-                return StringInflector::nameToCode($options['name']);
-            })
+            ->setDefault('code', fn (Options $options): string => StringInflector::nameToCode($options['name']))
             ->setNormalizer('code', static function (Options $options, ?string $code): string {
                 if ($code === null) {
                     return StringInflector::nameToCode($options['name']);
@@ -124,18 +111,9 @@ class CatalogPromotionExampleFactory extends AbstractExampleFactory implements E
 
                 return $code;
             })
-            ->setDefault('name', function (Options $options): string {
-                /** @var string $words */
-                $words = $this->faker->words(3, true);
-
-                return $words;
-            })
-            ->setDefault('label', function (Options $options): string {
-                return $options['name'];
-            })
-            ->setDefault('description', function (Options $options): string {
-                return $this->faker->sentence();
-            })
+            ->setDefault('name', fn (Options $options): string => (string) $this->faker->words(3, true))
+            ->setDefault('label', fn (Options $options): string => $options['name'])
+            ->setDefault('description', fn (Options $options): string => $this->faker->sentence())
             ->setDefault('channels', LazyOption::all($this->channelRepository))
             ->setAllowedTypes('channels', 'array')
             ->setNormalizer('channels', LazyOption::findBy($this->channelRepository, 'code'))
@@ -143,6 +121,14 @@ class CatalogPromotionExampleFactory extends AbstractExampleFactory implements E
             ->setDefined('actions')
             ->setDefault('priority', 0)
             ->setAllowedTypes('priority', ['integer', 'null'])
+            ->setDefault('exclusive', false)
+            ->setAllowedTypes('exclusive', ['boolean', 'null'])
+            ->setDefault('start_date', null)
+            ->setAllowedTypes('start_date', ['string', 'null'])
+            ->setDefault('end_date', null)
+            ->setAllowedTypes('end_date', ['string', 'null'])
+            ->setDefault('enabled', true)
+            ->setAllowedTypes('enabled', 'boolean')
         ;
     }
 

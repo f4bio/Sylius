@@ -411,6 +411,14 @@ final class ProductContext implements Context
     }
 
     /**
+     * @Then I should see this product is not discounted
+     */
+    public function iShouldSeeProductIsNotDiscounted(): void
+    {
+        Assert::null($this->showPage->getOriginalPrice());
+    }
+
+    /**
      * @Then /^I should see ("[^"]+" variant) is not discounted$/
      * @Then /^I should see (this variant) is not discounted$/
      */
@@ -460,6 +468,21 @@ final class ProductContext implements Context
     }
 
     /**
+     * @Then the original price of the :product product in the :channel channel should be empty
+     */
+    public function theOriginalPriceOfTheProductInTheChannelShouldBeEmpty(
+        ProductInterface $product,
+        ChannelInterface $channel
+    ): void {
+        $this->channelContextSetter->setChannel($channel);
+
+        $localeCode = $channel->getDefaultLocale()->getCode();
+        $this->showPage->open(['slug' => $product->getTranslation($localeCode)->getSlug(), '_locale' => $localeCode]);
+
+        Assert::null($this->showPage->getOriginalPrice());
+    }
+
+    /**
      * @When I select its :optionName as :optionValue
      */
     public function iSelectItsOptionAs(string $optionName, string $optionValue): void
@@ -495,10 +518,34 @@ final class ProductContext implements Context
     }
 
     /**
+     * @Then /^I should see ("[^"]+" product) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)" promotion$/
+     * @Then /^I should see (this product) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)" promotion$/
+     * @Then /^I should see (this product) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)" and "([^"]+)" promotions$/
+     * @Then /^I should see (this product) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)", "([^"]+)" and "([^"]+)" promotions$/
+     * @Then /^I should see (this product) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)", "([^"]+)", "([^"]+)" and "([^"]+)" promotions$/
+     */
+    public function iShouldSeeProductIsDiscountedFromToWithPromotions(
+        ProductInterface $product,
+        string $originalPrice,
+        string $price,
+        string ...$promotionsNames
+    ): void {
+        Assert::same($this->showPage->getPrice(), $price);
+        Assert::same($this->showPage->getOriginalPrice(), $originalPrice);
+        foreach ($promotionsNames as $promotionName) {
+            Assert::true(
+                $this->showPage->hasCatalogPromotionApplied($promotionName),
+                sprintf("Catalog promotion '%s' does not found ", $promotionName)
+            );
+        }
+    }
+
+    /**
      * @Then /^I should see ("[^"]+" variant) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)" promotion$/
      * @Then /^I should see (this variant) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)" promotion$/
      * @Then /^I should see (this variant) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)" and "([^"]+)" promotions$/
      * @Then /^I should see (this variant) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)", "([^"]+)" and "([^"]+)" promotions$/
+     * @Then /^I should see (this variant) is discounted from "([^"]+)" to "([^"]+)" with "([^"]+)", "([^"]+)", "([^"]+)" and "([^"]+)" promotions$/
      */
     public function iShouldSeeVariantIsDiscountedFromToWithPromotions(
         ProductVariantInterface $variant,
@@ -513,6 +560,22 @@ final class ProductContext implements Context
         foreach ($promotionsNames as $promotionName) {
             Assert::true($this->showPage->hasCatalogPromotionApplied($promotionName));
         }
+    }
+
+    /**
+     * @Then /^I should see (this variant) is discounted from "([^"]+)" to "([^"]+)" with ([^"]+) promotions$/
+     */
+    public function iShouldSeeVariantIsDiscountedFromToWithNumberOfPromotions(
+        ProductVariantInterface $variant,
+        string $originalPrice,
+        string $price,
+        int $numberOfPromotions
+    ): void {
+        $this->showPage->selectVariant($variant->getName());
+
+        Assert::same($this->showPage->getPrice(), $price);
+        Assert::same($this->showPage->getOriginalPrice(), $originalPrice);
+        Assert::count($this->showPage->getCatalogPromotionNames(), $numberOfPromotions);
     }
 
     /**
@@ -546,6 +609,23 @@ final class ProductContext implements Context
 
         $this->iOpenProductPage($product);
         $this->iShouldSeeVariantIsDiscountedFromToWithPromotions($variant, $originalPrice, $price, $promotionName);
+    }
+
+    /**
+     * @Then /^the visitor should(?:| still) see that the ("[^"]+" variant) is discounted from "([^"]+)" to "([^"]+)" with ([^"]+) promotions$/
+     */
+    public function theVisitorShouldSeeVariantIsDiscountedFromToWithNumberOfPromotions(
+        ProductVariantInterface $variant,
+        string $originalPrice,
+        string $price,
+        int $numberOfPromotions
+    ): void {
+        /** @var ProductInterface $product */
+        $product = $variant->getProduct();
+
+        $this->iOpenProductPage($product);
+
+        $this->iShouldSeeVariantIsDiscountedFromToWithNumberOfPromotions($variant, $originalPrice, $price, $numberOfPromotions);
     }
 
     /**

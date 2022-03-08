@@ -1,5 +1,5 @@
 # UPGRADE FROM `v1.10.X` TO `v1.11.0`
-
+ 
 1. The product images should have a proper prefix (`/media/image/`) added to the path, so the images could be resolved. 
    This is now done out of the box and response of `Product Image` resource is now:
    
@@ -21,7 +21,66 @@
     sylius_api:
         product_image_prefix: 'media/image'
     ```
+
+1. The following resources' response format changed:
+    * Taxons
+    * Products
+    * ProductVariants
+    * ProductOptions
+    * ProductOptionValues
+    * ShippingMethods
+    * Payments
+    * PaymentMethods
+    * Orders
+
+   Note that it concerns only `shop` endpoints. Now instead of returning an array of `translations` for a given resource, 
+   translation is done automatically based on the current locale. For example changes in request body of `GET` `api/v2/shop/shipping-methods/{code}` endpoint: 
+    
+    ```diff
+         {
+             "@context": "string",
+             "@id": "string",
+             "@type": "string",
+             "id": 0,
+             "code": "string",
+             "position": 0,
+     -       "translations": {
+     -       "en_US": {
+     -          "name": "string",
+     -          "description": "string",
+     -          "locale": "string"
+     -         }
+     -       },
+             "name": "string"
+     +       "description": "string"
+         }
+     ```
+
+1. The `api/v2/shop/payment/{id}/methods` endpoint has now `shop:payment_method:read` serialization group assigned. 
+   Therefore its body will look like this by default:
    
+    ```
+    {
+        "@context": "\/api\/v2\/contexts\/PaymentMethod",
+        "@id": "\/api\/v2\/shop\/orders\/nAWw2jewpA\/payments\/@integer@\/methods",
+        "@id": "\/api\/v2\/shop\/payments\/@integer@\/methods",
+        "@type": "hydra:Collection",
+        "hydra:member": [
+            {
+                "@id": "\/api\/v2\/shop\/payment-methods\/CASH_ON_DELIVERY",
+                "@type": "PaymentMethod",
+                "id": 1,
+                "code": "CASH_ON_DELIVERY",
+                "position": 0,
+                "name": "Cash on delivery",
+                "description": "Description",
+                "instructions": null
+            }
+        ],
+        "hydra:totalItems": 1
+    }
+    ```
+
 1. The method of the `/shop/orders/{tokenValue}/items` endpoint has been changed from `PATCH` to `POST`
 
 1. `Sylius\Bundle\ApiBundle\View\CartShippingMethodInterface` and `Sylius\Bundle\ApiBundle\View\CartShippingMethod` have been removed.
@@ -259,7 +318,7 @@
      * `sylius.api.item_data_provider.reset_password_item` => `Sylius\Bundle\ApiBundle\DataProvider\ResetPasswordItemDataProvider`
      * `sylius.api.kerner_request_event_subscriber` => `Sylius\Bundle\ApiBundle\EventSubscriber\KernelRequestEventSubscriber`
      * `sylius.api.product_slug_event_subscriber` => `Sylius\Bundle\ApiBundle\EventSubscriber\ProductSlugEventSubscriber`
-     * `sylius.api.product_taxon_filter` => `Sylius\Bundle\ApiBundle\Filter\TaxonFilter`
+     * `sylius.api.product_taxon_filter` => `Sylius\Bundle\ApiBundle\Filter\Doctrine\TaxonFilter`
      * `sylius.api.exchange_rate_filter` => `Sylius\Bundle\ApiBundle\Doctrine\Filter\ExchangeRateFilter`
      * `sylius.api.translation_order_name_and_locale_filter` => `Sylius\Bundle\ApiBundle\Doctrine\Filter\TranslationOrderNameAndLocaleFilter`
      * `sylius.api.product_variant_option_value_filter` => `Sylius\Bundle\ApiBundle\Doctrine\Filter\ProductVariantOptionValueFilter`
@@ -303,3 +362,33 @@
      * `sylius.api.swagger_product_image_documentation_normalizer` => `Sylius\Bundle\ApiBundle\Swagger\ProductImageDocumentationNormalizer`
      * `sylius.api.swagger_product_variant_documentation_normalizer` => `Sylius\Bundle\ApiBundle\Swagger\ProductVariantDocumentationNormalizer`
      * `sylius.api.swagger_shipping_method_documentation_normalizer` => `Sylius\Bundle\ApiBundle\Swagger\ShippingMethodDocumentationNormalizer`
+
+1. Following Data Providers have been transformed to Doctrine Extensions:
+    * `Sylius\Bundle\ApiBundle\DataProvider\AddressItemDataProvider` => `Sylius\Bundle\ApiBundle\Doctrine\QueryItemExtension\AddressItemExtension`
+    * `Sylius\Bundle\ApiBundle\DataProvider\CountryCollectionDataProvider` => `Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\CountryCollectionExtension`
+    * `Sylius\Bundle\ApiBundle\DataProvider\CurrencyCollectionDataProvider` => `Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\CurrencyCollectionExtension`
+    * `Sylius\Bundle\ApiBundle\DataProvider\LocaleCollectionDataProvider` => `Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\LocaleCollectionExtension`
+    * `Sylius\Bundle\ApiBundle\DataProvider\TaxonCollectionDataProvider` => `Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\TaxonCollectionExtension`
+
+1. The following filters have been moved to new namespace:
+    *  `Sylius\Bundle\ApiBundle\Doctrine\Filter\ExchangeRateFilter` service has been moved and renamed to `Sylius\Bundle\ApiBundle\Filter\Doctrine\ExchangeRateFilter`
+    *  `Sylius\Bundle\ApiBundle\Doctrine\Filter\TranslationOrderNameAndLocaleFilter` service has been moved and renamed to `Sylius\Bundle\ApiBundle\Filter\Doctrine\TranslationOrderNameAndLocaleFilter`
+    *  `Sylius\Bundle\ApiBundle\Doctrine\Filter\ProductVariantOptionValueFilter` service has been moved and renamed to `Sylius\Bundle\ApiBundle\Filter\Doctrine\ProductVariantOptionValueFilter`
+    *  `Sylius\Bundle\ApiBundle\Doctrine\Filter\ProductPriceOrderFilter` service has been moved and renamed to `Sylius\Bundle\ApiBundle\Filter\Doctrine\ProductPriceOrderFilter`
+
+1. `Sylius\Bundle\ApiBundle\Command\Cart\ApplyCouponToCart` and `Sylius\Bundle\ApiBundle\Command\Checkout\AddressOrder` commands have been replaced with `Sylius\Bundle\ApiBundle\Command\Checkout\UpdateCart`.
+
+1. `Sylius\Bundle\ApiBundle\CommandHandler\Cart\ApplyCouponToCartHandler` and `Sylius\Bundle\ApiBundle\CommandHandler\Checkout\AddressOrderHandler` command handlers have been replaced with `Sylius\Bundle\ApiBundle\CommandHandler\Checkout\UpdateCartHandler`.
+
+1. The `sylius.api.filter_archived_shipping_methods` services has been renamed to `sylius.api.archived_shipping_methods_filter` to be coherent with rest of the filters
+
+1. The argument of `Sylius\Bundle\ApiBundle\Applicator\ArchivingShippingMethodApplicatorInterface` service has been changed
+   from `sylius.calendar` to `Sylius\Calendar\Provider\DateTimeProviderInterface`.
+
+1. Renamed response body field `originalPrice` to `originalUnitPrice` of the following endpoints:
+   - `'POST', '/api/v2/shop/orders/{tokenValue}/items'`
+   - `'GET', '/api/v2/shop/orders/{tokenValue}/items'`
+   - `'GET', '/api/v2/shop/orders/{tokenValue}'`
+
+1. Added response body field `originalUnitPrice` to the following endpoint:
+   - `'GET', '/api/v2/admin/orders/{tokenValue}'`

@@ -24,16 +24,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class ProductAssociationsType extends AbstractType
 {
-    private RepositoryInterface $productAssociationTypeRepository;
-
-    private DataTransformerInterface $productsToProductAssociationsTransformer;
-
     public function __construct(
-        RepositoryInterface $productAssociationTypeRepository,
-        DataTransformerInterface $productsToProductAssociationsTransformer
+        private RepositoryInterface $productAssociationTypeRepository,
+        private DataTransformerInterface $productsToProductAssociationsTransformer
     ) {
-        $this->productAssociationTypeRepository = $productAssociationTypeRepository;
-        $this->productsToProductAssociationsTransformer = $productsToProductAssociationsTransformer;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -46,14 +40,10 @@ final class ProductAssociationsType extends AbstractType
         $resolver->setDefaults([
             'entries' => $this->productAssociationTypeRepository->findAll(),
             'entry_type' => TextType::class,
-            'entry_name' => function (ProductAssociationTypeInterface $productAssociationType) {
-                return $productAssociationType->getCode();
-            },
-            'entry_options' => function (ProductAssociationTypeInterface $productAssociationType) {
-                return [
-                    'label' => $productAssociationType->getName(),
-                ];
-            },
+            'entry_name' => fn(ProductAssociationTypeInterface $productAssociationType) => $productAssociationType->getCode(),
+            'entry_options' => fn(ProductAssociationTypeInterface $productAssociationType) => [
+                'label' => $productAssociationType->getName(),
+            ],
         ]);
     }
 

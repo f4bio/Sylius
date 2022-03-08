@@ -27,6 +27,7 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
+use Sylius\Component\Core\Formatter\StringInflector;
 use Webmozart\Assert\Assert;
 
 final class ManagingCatalogPromotionsContext implements Context
@@ -87,6 +88,18 @@ final class ManagingCatalogPromotionsContext implements Context
         $this->createPage->open();
         $this->createPage->specifyCode($code);
         $this->formElement->nameIt($name);
+        $this->createPage->create();
+    }
+
+    /**
+     * @When I create a new catalog promotion with :code code and :name name and :priority priority
+     */
+    public function iCreateANewCatalogPromotionWithCodeAndNameAndPriority(string $code, string $name, int $priority): void
+    {
+        $this->createPage->open();
+        $this->createPage->specifyCode($code);
+        $this->formElement->nameIt($name);
+        $this->formElement->prioritizeIt($priority);
         $this->createPage->create();
     }
 
@@ -206,6 +219,14 @@ final class ManagingCatalogPromotionsContext implements Context
     }
 
     /**
+     * @When I add a new catalog promotion scope
+     */
+    public function iAddANewCatalogPromotionScope(): void
+    {
+        $this->formElement->addScope();
+    }
+
+    /**
      * @When /^I add(?:| another) scope that applies on ("[^"]+" variant)$/
      * @When /^I add scope that applies on ("[^"]+" variant) and ("[^"]+" variant)$/
      * @When /^I add scope that applies on variants ("[^"]+" variant) and ("[^"]+" variant)$/
@@ -254,13 +275,58 @@ final class ManagingCatalogPromotionsContext implements Context
     }
 
     /**
+     * @When I add a new catalog promotion action
+     */
+    public function iAddANewCatalogPromotionAction(): void
+    {
+        $this->formElement->addAction();
+    }
+
+    /**
      * @When I add another action that gives ":discount%" percentage discount
      * @When I add action that gives ":discount%" percentage discount
      */
     public function iAddActionThatGivesPercentageDiscount(string $discount): void
     {
         $this->formElement->addAction();
+        $this->formElement->chooseActionType('Percentage discount');
         $this->formElement->specifyLastActionDiscount($discount);
+    }
+
+    /**
+     * @When /^I add action that gives "(?:€|£|\$)([^"]+)" of fixed discount in the ("[^"]+" channel)$/
+     */
+    public function iAddActionThatGivesFixedDiscount(string $discount, ChannelInterface $channel): void
+    {
+        $this->formElement->addAction();
+        $this->formElement->chooseActionType('Fixed discount');
+        $this->formElement->specifyLastActionDiscountForChannel($discount, $channel);
+    }
+
+    /**
+     * @When /^I create an exclusive "([^"]+)" catalog promotion with ([^"]+) priority that applies on ("[^"]+" product) and reduces price by "((?:\d+\.)?\d+)%" in ("[^"]+" channel)$/
+     */
+    public function iCreateAnExclusiveCatalogPromotionWithCodeAndPriorityThatReducesPriceByInTheChannelAndAppliesOnProduct(
+        string $name,
+        int $priority,
+        ProductInterface $product,
+        string $discount,
+        string $channel
+    ): void {
+        $this->createCatalogPromotion($name, $priority, true, $product, $discount, $channel);
+    }
+
+    /**
+     * @When /^I create a "([^"]+)" catalog promotion with ([^"]+) priority that applies on ("[^"]+" product) and reduces price by "((?:\d+\.)?\d+)%" in ("[^"]+" channel)$/
+     */
+    public function iCreateACatalogPromotionWithCodeAndNameAndPriorityThatAppliesOnProductAndReducesPriceByInChannel(
+        string $name,
+        int $priority,
+        ProductInterface $product,
+        string $discount,
+        string $channel
+    ): void {
+        $this->createCatalogPromotion($name, $priority, false, $product, $discount, $channel);
     }
 
     /**
@@ -358,6 +424,33 @@ final class ManagingCatalogPromotionsContext implements Context
     }
 
     /**
+     * @When /^I edit ("[^"]+" catalog promotion) to have "(?:€|£|\$)([^"]+)" of fixed discount in the ("[^"]+" channel)$/
+     */
+    public function iEditCatalogPromotionToHaveFixedDiscountInTheChannel(
+        CatalogPromotionInterface $catalogPromotion,
+        string $discount,
+        ChannelInterface $channel
+    ): void {
+        $this->updatePage->open(['id' => $catalogPromotion->getId()]);
+        $this->formElement->chooseActionType('Fixed discount');
+        $this->formElement->specifyLastActionDiscountForChannel($discount, $channel);
+        $this->updatePage->saveChanges();
+
+        $this->sharedStorage->set('catalog_promotion', $catalogPromotion);
+    }
+
+    /**
+     * @When /^I edit it to have "(?:€|£|\$)([^"]+)" of fixed discount in the ("[^"]+" channel)$/
+     */
+    public function iEditItToHaveFixedDiscountInTheChannel(
+        string $discount,
+        ChannelInterface $channel
+    ): void {
+        $this->formElement->chooseActionType('Fixed discount');
+        $this->formElement->specifyLastActionDiscountForChannel($discount, $channel);
+    }
+
+    /**
      * @When I disable :catalogPromotion catalog promotion
      */
     public function iDisableCatalogPromotion(CatalogPromotionInterface $catalogPromotion): void
@@ -420,6 +513,16 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iAddPercentageDiscountActionWithoutAmountConfigured(): void
     {
         $this->formElement->addAction();
+        $this->formElement->chooseActionType('Percentage discount');
+    }
+
+    /**
+     * @When I add fixed discount action without amount configured
+     */
+    public function iAddFixedDiscountActionWithoutAmountConfigured(): void
+    {
+        $this->formElement->addAction();
+        $this->formElement->chooseActionType('Fixed discount');
     }
 
     /**
@@ -429,6 +532,17 @@ final class ManagingCatalogPromotionsContext implements Context
     {
         $this->formElement->addAction();
         $this->formElement->specifyLastActionDiscount('alot');
+    }
+
+    /**
+     * @When I add invalid fixed discount action with non number in amount for the :channel channel
+     */
+    public function iAddInvalidFixedDiscountActionWithNonNumberInAmountForTheChannel(
+        ChannelInterface $channel
+    ): void {
+        $this->formElement->addAction();
+        $this->formElement->chooseActionType('Fixed discount');
+        $this->formElement->specifyLastActionDiscountForChannel('wrong value', $channel);
     }
 
     /**
@@ -487,6 +601,24 @@ final class ManagingCatalogPromotionsContext implements Context
     }
 
     /**
+     * @When I edit it to have empty amount of percentage discount
+     */
+    public function iEditItToHaveEmptyPercentageDiscount(): void
+    {
+        $this->formElement->chooseActionType('Percentage discount');
+        $this->formElement->specifyLastActionDiscount('');
+    }
+
+    /**
+     * @When I edit it to have empty amount of fixed discount in the :channel channel
+     */
+    public function iEditItToHaveEmptyFixedDiscountInChannel(ChannelInterface $channel): void
+    {
+        $this->formElement->chooseActionType('Fixed discount');
+        $this->formElement->specifyLastActionDiscountForChannel('', $channel);
+    }
+
+    /**
      * @Then I should be notified that a discount amount should be between 0% and 100%
      */
     public function iShouldBeNotifiedThatADiscountAmountShouldBeBetween0And100Percent(): void
@@ -500,6 +632,24 @@ final class ManagingCatalogPromotionsContext implements Context
     public function iShouldBeNotifiedThatADiscountAmountShouldBeANumber(): void
     {
         Assert::same($this->formElement->getValidationMessage(), 'The percentage discount amount must be a number and can not be empty.');
+    }
+
+    /**
+     * @Then I should be notified that a discount amount is not valid
+     */
+    public function iShouldBeNotifiedThatADiscountAmountIsNotValid(): void
+    {
+        Assert::same($this->formElement->getValidationMessage(), 'This value is not valid.');
+    }
+
+    /**
+     * @Then I should be notified that a discount amount should be configured for at least one channel
+     */
+    public function iShouldBeNotifiedThatADiscountAmountShouldBeConfiguredForAtLeasOneChannel(): void
+    {
+        Assert::true($this->formElement->hasOnlyOneValidationMessage(
+            'Configuration for one of the required channels is not provided.'
+        ));
     }
 
     /**
@@ -537,6 +687,20 @@ final class ManagingCatalogPromotionsContext implements Context
             sprintf(
                 'Cannot find catalog promotions with name "%s" operating between "%s" and "%s" in the list',
                 $name, $startDate, $endDate
+            )
+        );
+    }
+
+    /**
+     * @Then the catalog promotion named :name should have priority :priority
+     */
+    public function theCatalogPromotionNamedShouldHavePriority(string $name, int $priority): void
+    {
+        Assert::true(
+            $this->indexPage->isSingleResourceOnPage(['name' => $name, 'priority' => $priority]),
+            sprintf(
+                'Cannot find catalog promotions with name "%s" and priority %s in the list',
+                $name, $priority
             )
         );
     }
@@ -660,6 +824,20 @@ final class ManagingCatalogPromotionsContext implements Context
     public function itShouldHaveDiscount(string $amount): void
     {
         Assert::same($this->formElement->getLastActionDiscount(), $amount);
+    }
+
+    /**
+     * @Then /^the ("[^"]+" catalog promotion) should have "(?:€|£|\$)([^"]+)" of fixed discount in the ("[^"]+" channel)$/
+     * @Then /^(this catalog promotion) should have "(?:€|£|\$)([^"]+)" of fixed discount in the ("[^"]+" channel)$/
+     */
+    public function theCatalogPromotionShouldHaveFixedDiscountInTheChannel(
+        CatalogPromotionInterface $catalogPromotion,
+        string $amount,
+        ChannelInterface $channel
+    ): void {
+        $this->updatePage->open(['id' => $catalogPromotion->getId()]);
+
+        Assert::same($this->formElement->getLastActionFixedDiscount($channel), $amount);
     }
 
     /**
@@ -871,6 +1049,14 @@ final class ManagingCatalogPromotionsContext implements Context
     }
 
     /**
+     * @Then it should reduce price by :amount in the :channel channel
+     */
+    public function itShouldReducePriceByInTheChannel(string $amount, ChannelInterface $channel): void
+    {
+        Assert::true($this->showPage->hasActionWithFixedDiscount($amount, $channel));
+    }
+
+    /**
      * @Then it should apply on :variant variant
      */
     public function itShouldApplyOnVariant(ProductVariantInterface $variant): void
@@ -884,6 +1070,22 @@ final class ManagingCatalogPromotionsContext implements Context
     public function itShouldApplyOnProduct(ProductInterface $product): void
     {
         Assert::true($this->showPage->hasScopeWithProduct($product));
+    }
+
+    /**
+     * @Given it should be exclusive
+     */
+    public function itShouldBeExclusive(): void
+    {
+        Assert::true($this->showPage->isExclusive());
+    }
+
+    /**
+     * @Given it should not be exclusive
+     */
+    public function itShouldNotBeExclusive(): void
+    {
+        Assert::false($this->showPage->isExclusive());
     }
 
     /**
@@ -904,10 +1106,58 @@ final class ManagingCatalogPromotionsContext implements Context
     }
 
     /**
+     * @Then I should be notified that not all channels are filled
+     */
+    public function iShouldBeNotifiedThatNotAllChannelsAreFilled(): void
+    {
+        Assert::same($this->formElement->getValidationMessage(), 'Configuration for one of the required channels is not provided.');
+    }
+
+    /**
      * @Then its priority should be :priority
      */
     public function itsPriorityShouldBe(int $priority): void
     {
         Assert::same($this->showPage->getPriority(), $priority);
+    }
+
+    /**
+     * @Then I should see the catalog promotion scope configuration form
+     */
+    public function iShouldSeeTheCatalogPromotionScopeConfigurationForm(): void
+    {
+        Assert::true($this->createPage->checkIfScopeConfigurationFormIsVisible(), 'Catalog promotion scope configuration form is not visible.');
+    }
+
+    /**
+     * @Then I should see the catalog promotion action configuration form
+     */
+    public function iShouldSeeTheCatalogPromotionActionConfigurationForm(): void
+    {
+        Assert::true($this->createPage->checkIfActionConfigurationFormIsVisible(), 'Catalog promotion action configuration form is not visible.');
+    }
+
+    private function createCatalogPromotion(
+        string $name,
+        int $priority,
+        bool $exclusive,
+        ProductInterface $product,
+        string $discount,
+        string $channel
+    ): void {
+        $this->createPage->open();
+        $this->createPage->specifyCode(StringInflector::nameToCode($name));
+        $this->formElement->labelIt($name, 'en_US');
+        $this->formElement->nameIt($name);
+        $this->formElement->prioritizeIt($priority);
+        $this->formElement->setExclusiveness($exclusive);
+        $this->formElement->checkChannel($channel);
+        $this->formElement->addScope();
+        $this->formElement->chooseScopeType('For product');
+        $this->formElement->chooseLastScopeCodes([$product->getCode()]);
+        $this->formElement->addAction();
+        $this->formElement->chooseActionType('Percentage discount');
+        $this->formElement->specifyLastActionDiscount($discount);
+        $this->createPage->create();
     }
 }

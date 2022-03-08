@@ -6,6 +6,10 @@
         <span class="ui red label"><i class="remove icon"></i>{{ 'sylius.ui.disabled'|trans }}</span>
         {% endif %}
 
+        {% if catalog_promotion.exclusive %}
+        <span class="ui teal label" {{ sylius_test_html_attribute('exclusive') }}><i class="checkmark icon"></i>{{ 'sylius.ui.exclusive'|trans }}</span>
+        {% endif %}
+
         {% include '@SyliusAdmin/Common/Label/catalogPromotionState.html.twig' with {'data': catalog_promotion.state} %}
 
         <table class="ui very basic celled table">
@@ -22,14 +26,14 @@
             {% if catalog_promotion.startDate is not null %}
             <tr>
                 <td class="five wide"><strong class="gray text">{{ 'sylius.ui.start_date'|trans }}</strong></td>
-                <td {{ sylius_test_html_attribute('start-date') }}>{{ catalog_promotion.startDate|format_datetime(pattern='YYYY-MM-dd hh:mm:ss') }}</td>
+                <td {{ sylius_test_html_attribute('start-date') }}>{{ catalog_promotion.startDate|format_datetime(pattern='YYYY-MM-dd HH:mm:ss') }}</td>
             </tr>
             {% endif %}
 
             {% if catalog_promotion.endDate is not null %}
             <tr>
                 <td class="five wide"><strong class="gray text">{{ 'sylius.ui.end_date'|trans }}</strong></td>
-                <td {{ sylius_test_html_attribute('end-date') }}>{{ catalog_promotion.endDate|format_datetime(pattern='YYYY-MM-dd hh:mm:ss') }}</td>
+                <td {{ sylius_test_html_attribute('end-date') }}>{{ catalog_promotion.endDate|format_datetime(pattern='YYYY-MM-dd HH:mm:ss') }}</td>
             </tr>
             {% endif %}
             <tr>

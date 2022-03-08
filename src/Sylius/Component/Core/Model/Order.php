@@ -30,12 +30,12 @@ use Webmozart\Assert\Assert;
 class Order extends BaseOrder implements OrderInterface
 {
     /**
-     * @var \Sylius\Component\Core\Model\CustomerInterface|null
+     * @var CustomerInterface|null
      */
     protected $customer;
 
     /**
-     * @var \Sylius\Component\Core\Model\ChannelInterface|null
+     * @var ChannelInterface|null
      */
     protected $channel;
 
@@ -109,6 +109,8 @@ class Order extends BaseOrder implements OrderInterface
      * @var string|null
      */
     protected $customerIp;
+
+    protected bool $createdByGuest = true;
 
     public function __construct()
     {
@@ -459,5 +461,29 @@ class Order extends BaseOrder implements OrderInterface
     public function setCustomerIp(?string $customerIp): void
     {
         $this->customerIp = $customerIp;
+    }
+
+    public function getNonDiscountedItemsTotal(): int
+    {
+        $total = 0;
+        /** @var OrderItemInterface $item */
+        foreach ($this->items as $item) {
+            $variant = $item->getVariant();
+            if ($variant->getAppliedPromotionsForChannel($this->channel)->isEmpty()) {
+                $total += $item->getTotal();
+            }
+        }
+
+        return $total;
+    }
+
+    public function getCreatedByGuest(): bool
+    {
+        return $this->createdByGuest;
+    }
+
+    public function setCreatedByGuest(bool $createdByGuest): void
+    {
+        $this->createdByGuest = $createdByGuest;
     }
 }

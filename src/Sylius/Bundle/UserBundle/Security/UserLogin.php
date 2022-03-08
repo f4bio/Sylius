@@ -24,20 +24,11 @@ use Symfony\Component\Security\Core\User\UserCheckerInterface;
 
 class UserLogin implements UserLoginInterface
 {
-    private TokenStorageInterface $tokenStorage;
-
-    private UserCheckerInterface $userChecker;
-
-    private EventDispatcherInterface $eventDispatcher;
-
     public function __construct(
-        TokenStorageInterface $tokenStorage,
-        UserCheckerInterface $userChecker,
-        EventDispatcherInterface $eventDispatcher
+        private TokenStorageInterface $tokenStorage,
+        private UserCheckerInterface $userChecker,
+        private EventDispatcherInterface $eventDispatcher
     ) {
-        $this->tokenStorage = $tokenStorage;
-        $this->userChecker = $userChecker;
-        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function login(UserInterface $user, ?string $firewallName = null): void
@@ -58,11 +49,20 @@ class UserLogin implements UserLoginInterface
 
     protected function createToken(UserInterface $user, string $firewallName): UsernamePasswordToken
     {
+        /** @deprecated parameter credential was deprecated in Symfony 5.4, so in Sylius 1.11 too, in Sylius 2.0 providing 4 arguments will be prohibited. */
+        if (3 === (new \ReflectionClass(UsernamePasswordToken::class))->getConstructor()->getNumberOfParameters()) {
+            return new UsernamePasswordToken(
+                $user,
+                $firewallName,
+                array_map(/** @param object|string $role */ static function ($role): string { return (string) $role; }, $user->getRoles())
+            );
+        }
+
         return new UsernamePasswordToken(
             $user,
             null,
             $firewallName,
-            array_map(/** @param object|string $role */ static function ($role): string { return (string) $role; }, $user->getRoles())
+            array_map(/** @param object|string $role */ static fn($role): string => (string) $role, $user->getRoles())
         );
     }
 }

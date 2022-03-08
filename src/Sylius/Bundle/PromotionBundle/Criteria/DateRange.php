@@ -14,15 +14,13 @@ declare(strict_types=1);
 namespace Sylius\Bundle\PromotionBundle\Criteria;
 
 use Doctrine\ORM\QueryBuilder;
-use Sylius\Component\Promotion\Provider\DateTimeProviderInterface;
+use Sylius\Calendar\Provider\DateTimeProviderInterface;
+use Sylius\Component\Promotion\Model\CatalogPromotionInterface;
 
 final class DateRange implements CriteriaInterface
 {
-    private DateTimeProviderInterface $calendar;
-
-    public function __construct(DateTimeProviderInterface $calendar)
+    public function __construct(private DateTimeProviderInterface $calendar)
     {
-        $this->calendar = $calendar;
     }
 
     public function filterQueryBuilder(QueryBuilder $queryBuilder): QueryBuilder
@@ -36,5 +34,13 @@ final class DateRange implements CriteriaInterface
         ;
 
         return $queryBuilder;
+    }
+
+    public function verify(CatalogPromotionInterface $catalogPromotion): bool
+    {
+        return
+            ($catalogPromotion->getStartDate() === null || $catalogPromotion->getStartDate() <= $this->calendar->now()) &&
+            ($catalogPromotion->getEndDate() === null || $catalogPromotion->getEndDate() > $this->calendar->now())
+        ;
     }
 }

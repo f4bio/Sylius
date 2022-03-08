@@ -23,18 +23,22 @@ use Webmozart\Assert\Assert;
 
 final class ProductVariantContext implements Context
 {
-    private ApiClientInterface $client;
+    private ApiClientInterface $variantClient;
+
+    private ApiClientInterface $catalogPromotionClient;
 
     private ResponseCheckerInterface $responseChecker;
 
     private SharedStorageInterface $sharedStorage;
 
     public function __construct(
-        ApiClientInterface $client,
+        ApiClientInterface $variantClient,
+        ApiClientInterface $catalogPromotionClient,
         ResponseCheckerInterface $responseChecker,
         SharedStorageInterface $sharedStorage
     ) {
-        $this->client = $client;
+        $this->variantClient = $variantClient;
+        $this->catalogPromotionClient = $catalogPromotionClient;
         $this->responseChecker = $responseChecker;
         $this->sharedStorage = $sharedStorage;
     }
@@ -46,7 +50,8 @@ final class ProductVariantContext implements Context
      */
     public function iSelectVariant(ProductVariantInterface $variant): void
     {
-        $this->client->show($variant->getCode());
+        $this->sharedStorage->set('variant', $variant);
+        $this->variantClient->show($variant->getCode());
     }
 
     /**
@@ -55,7 +60,7 @@ final class ProductVariantContext implements Context
     public function visitorViewVariant(ProductVariantInterface $variant): void
     {
         $this->sharedStorage->set('token', null);
-        $this->client->show($variant->getCode());
+        $this->variantClient->show($variant->getCode());
     }
 
     /**
@@ -63,7 +68,7 @@ final class ProductVariantContext implements Context
      */
     public function iViewVariants(): void
     {
-        $this->client->index();
+        $this->variantClient->index();
     }
 
     /**
@@ -72,7 +77,7 @@ final class ProductVariantContext implements Context
      */
     public function theProductVariantPriceShouldBe(int $price): void
     {
-        $response = $this->responseChecker->getResponseContent($this->client->getLastResponse());
+        $response = $this->responseChecker->getResponseContent($this->variantClient->getLastResponse());
 
         Assert::same($response['price'], $price);
     }
@@ -82,7 +87,7 @@ final class ProductVariantContext implements Context
      */
     public function theProductOriginalPriceShouldBe(int $originalPrice): void
     {
-        $response = $this->responseChecker->getResponseContent($this->client->getLastResponse());
+        $response = $this->responseChecker->getResponseContent($this->variantClient->getLastResponse());
 
         Assert::same($response['originalPrice'], $originalPrice);
     }
@@ -92,6 +97,7 @@ final class ProductVariantContext implements Context
      * @Then /^I should see (this variant) is discounted from ("[^"]+") to ("[^"]+") with "([^"]+)" promotion$/
      * @Then /^I should see (this variant) is discounted from ("[^"]+") to ("[^"]+") with "([^"]+)" and "([^"]+)" promotions$/
      * @Then /^I should see (this variant) is discounted from ("[^"]+") to ("[^"]+") with "([^"]+)", "([^"]+)" and "([^"]+)" promotions$/
+     * @Then /^I should see (this variant) is discounted from ("[^"]+") to ("[^"]+") with "([^"]+)", "([^"]+)", "([^"]+)" and "([^"]+)" promotions$/
      */
     public function iShouldSeeVariantIsDiscountedFromToWithPromotions(
         ProductVariantInterface $variant,
@@ -103,9 +109,28 @@ final class ProductVariantContext implements Context
 
         Assert::same($content['price'], $price);
         Assert::same($content['originalPrice'], $originalPrice);
-        foreach ($promotionsNames as $promotionName) {
-            Assert::inArray(['en_US' => ['name' => $promotionName, 'description' => $promotionName . ' description']], $content['appliedPromotions']);
+        foreach ($content['appliedPromotions'] as $promotionIri) {
+            $catalogPromotionContent = $this->responseChecker->getResponseContent(
+                $this->catalogPromotionClient->showByIri($promotionIri)
+            );
+            Assert::inArray($catalogPromotionContent['label'], $promotionsNames);
         }
+    }
+
+    /**
+     * @Then /^I should see (this variant) is discounted from ("[^"]+") to ("[^"]+") with ([^"]+) promotions$/
+     */
+    public function iShouldSeeVariantIsDiscountedFromToWithNumberOfPromotions(
+        ProductVariantInterface $variant,
+        int $originalPrice,
+        int $price,
+        int $numberOfPromotions
+    ): void {
+        $content = $this->findVariant($variant);
+
+        Assert::same($content['price'], $price);
+        Assert::same($content['originalPrice'], $originalPrice);
+        Assert::count($content['appliedPromotions'], $numberOfPromotions);
     }
 
     /**
@@ -117,12 +142,14 @@ final class ProductVariantContext implements Context
         int $price,
         string $promotionName
     ): void {
-        $content = $this->findVariant($variant);
+        $variantContent = $this->findVariant($variant);
+        $catalogPromotionResponse = $this->variantClient->showByIri($variantContent['appliedPromotions'][0]);
+        $catalogPromotionContent = $this->responseChecker->getResponseContent($catalogPromotionResponse);
 
-        Assert::same(sizeof($content['appliedPromotions']), 1);
-        Assert::same($content['price'], $price);
-        Assert::same($content['originalPrice'], $originalPrice);
-        Assert::inArray(['en_US' => ['name' => $promotionName, 'description' => $promotionName . ' description']], $content['appliedPromotions']);
+        Assert::count($variantContent['appliedPromotions'], 1);
+        Assert::same($variantContent['price'], $price);
+        Assert::same($variantContent['originalPrice'], $originalPrice);
+        Assert::same($catalogPromotionContent['label'], $promotionName);
     }
 
     /**
@@ -135,9 +162,24 @@ final class ProductVariantContext implements Context
         string $promotionName
     ): void {
         $this->sharedStorage->set('token', null);
-        $this->client->show($productVariant->getCode());
+        $this->variantClient->show($productVariant->getCode());
 
         $this->iShouldSeeVariantIsDiscountedFromToWithPromotions($productVariant, $originalPrice, $price, $promotionName);
+    }
+
+    /**
+     * @Then /^the visitor should(?:| still) see that the ("[^"]+" variant) is discounted from ("[^"]+") to ("[^"]+") with ([^"]+) promotions$/
+     */
+    public function theVisitorShouldSeeVariantIsDiscountedFromToWithNumberOfPromotions(
+        ProductVariantInterface $variant,
+        int $originalPrice,
+        int $price,
+        int $numberOfPromotions
+    ): void {
+        $this->sharedStorage->set('token', null);
+        $this->variantClient->show($variant->getCode());
+
+        $this->iShouldSeeVariantIsDiscountedFromToWithNumberOfPromotions($variant, $originalPrice, $price, $numberOfPromotions);
     }
 
     /**
@@ -145,7 +187,7 @@ final class ProductVariantContext implements Context
      */
     public function iShouldSeeVariantIsNotDiscounted(ProductVariantInterface $variant): void
     {
-        $items = $this->responseChecker->getCollectionItemsWithValue($this->client->getLastResponse(), 'code', $variant->getCode());
+        $items = $this->responseChecker->getCollectionItemsWithValue($this->variantClient->getLastResponse(), 'code', $variant->getCode());
         $item = array_pop($items);
         Assert::keyNotExists($item, 'appliedPromotions');
     }
@@ -166,7 +208,7 @@ final class ProductVariantContext implements Context
      */
     public function iShouldSeeThisVariantIsNotDiscounted(ProductVariantInterface $variant): void
     {
-        $content = $this->responseChecker->getResponseContent($this->client->show($variant->getCode()));
+        $content = $this->responseChecker->getResponseContent($this->variantClient->show($variant->getCode()));
 
         Assert::keyNotExists($content, 'appliedPromotions');
     }
@@ -181,7 +223,7 @@ final class ProductVariantContext implements Context
 
         /** @var ProductVariantInterface $variant */
         foreach ($variants as $variant) {
-            $content = $this->responseChecker->getResponseContent($this->client->show($variant->getCode()));
+            $content = $this->responseChecker->getResponseContent($this->variantClient->show($variant->getCode()));
             Assert::keyExists(
                 $content,
                 'appliedPromotions',
@@ -200,7 +242,7 @@ final class ProductVariantContext implements Context
 
         /** @var ProductVariantInterface $variant */
         foreach ($variants as $variant) {
-            $content = $this->responseChecker->getResponseContent($this->client->show($variant->getCode()));
+            $content = $this->responseChecker->getResponseContent($this->variantClient->show($variant->getCode()));
             Assert::keyNotExists(
                 $content,
                 'appliedPromotions',
@@ -211,7 +253,7 @@ final class ProductVariantContext implements Context
 
     private function findVariant(?ProductVariantInterface $variant): array
     {
-        $response = $this->client->getLastResponse();
+        $response = $this->variantClient->getLastResponse();
 
         if ($variant !== null && $this->responseChecker->hasValue($response, '@type', 'hydra:Collection')) {
             $returnValue = $this->responseChecker->getCollectionItemsWithValue($response, 'code', $variant->getCode());

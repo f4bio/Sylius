@@ -23,16 +23,12 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class TaxCategoryExampleFactory extends AbstractExampleFactory implements ExampleFactoryInterface
 {
-    private FactoryInterface $taxCategoryFactory;
-
     private Generator $faker;
 
     private OptionsResolver $optionsResolver;
 
-    public function __construct(FactoryInterface $taxCategoryFactory)
+    public function __construct(private FactoryInterface $taxCategoryFactory)
     {
-        $this->taxCategoryFactory = $taxCategoryFactory;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -62,12 +58,8 @@ class TaxCategoryExampleFactory extends AbstractExampleFactory implements Exampl
 
                 return $words;
             })
-            ->setDefault('code', function (Options $options): string {
-                return StringInflector::nameToCode($options['name']);
-            })
-            ->setDefault('description', function (Options $options): string {
-                return $this->faker->paragraph;
-            })
+            ->setDefault('code', fn(Options $options): string => StringInflector::nameToCode($options['name']))
+            ->setDefault('description', fn(Options $options): string => $this->faker->paragraph)
         ;
     }
 }

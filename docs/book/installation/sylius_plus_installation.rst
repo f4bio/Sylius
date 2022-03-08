@@ -13,21 +13,21 @@ Installing Sylius Plus as a plugin to a Sylius application
 **Important Requirements**
 
 +---------------+-----------------------+
-| PHP           | ^7.3                  |
+| PHP           | ^8.0                  |
 +---------------+-----------------------+
-| sylius/sylius | ^1.9                  |
+| sylius/sylius | ^1.10.1               |
 +---------------+-----------------------+
-| Symfony       | ^5.2                  |
+| Symfony       | ^4.4 || ^5.4          |
 +---------------+-----------------------+
 
 **0.** Prepare project:
 
 .. tip::
 
-    If it is a new project you are initiating, then first install Sylius-Standard in **version ^1.10** according to
+    If it is a new project you are initiating, then first install Sylius-Standard in **version ^1.11** according to
     :doc:`these instructions </book/installation/installation>`.
 
-    If you're installing Plus package to an existing project, then make sure you're upgraded to ``sylius/sylius ^1.10``.
+    If you're installing Plus package to an existing project, then make sure you're upgraded to ``sylius/sylius ^1.11``.
 
 **1.** Configure access to the private Packagist package in composer by using the Access Token you have been given with your license.
 
@@ -40,7 +40,7 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: bash
 
     composer config repositories.plus composer https://sylius.repo.packagist.com/ShortNameOfYourOrganization/
-    composer require "sylius/plus:^1.0.0-ALPHA.1" --no-update
+    composer require "sylius/plus:^1.0.0-ALPHA.5" --no-update
     composer update --no-scripts
     composer sync-recipes
 
@@ -61,7 +61,7 @@ Installing Sylius Plus as a plugin to a Sylius application
 
     # config/packages/_sylius.yaml
     imports:
-    ...
+    # ...
         - { resource: "@SyliusPlusPlugin/Resources/config/config.yaml" }
 
 **5.** Configure Shop, Admin and Admin API routing:
@@ -69,7 +69,7 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: yaml
 
     # config/routes/sylius_shop.yaml
-    ...
+    # ...
 
     sylius_plus_shop:
         resource: "@SyliusPlusPlugin/Resources/config/shop_routing.yaml"
@@ -80,23 +80,11 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: yaml
 
     # config/routes/sylius_admin.yaml:
-    ...
+    # ...
 
     sylius_plus_admin:
         resource: "@SyliusPlusPlugin/Resources/config/admin_routing.yaml"
         prefix: /admin
-.. warning::
-
-    Not needed for Sylius Plus >= `1.0.0-ALPHA.1`
-
-    .. code-block:: yaml
-
-        # config/routes/sylius_admin_api.yaml:
-        ...
-
-        sylius_plus_admin_api:
-            resource: "@SyliusPlusPlugin/Resources/config/api_routing.yaml"
-            prefix: /api/v1
 
 **6.** Add traits that enhance Sylius models:
 
@@ -110,7 +98,6 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: php
 
     // src/Entity/User/AdminUser.php
-
     <?php
 
     declare(strict_types=1);
@@ -147,7 +134,6 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: php
 
     // src/Entity/Channel/Channel.php
-
     <?php
 
     declare(strict_types=1);
@@ -172,7 +158,6 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: php
 
     // src/Entity/Customer/Customer.php
-
     <?php
 
     declare(strict_types=1);
@@ -197,7 +182,6 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: php
 
     // src/Entity/Order/Order.php
-
     <?php
 
     declare(strict_types=1);
@@ -222,7 +206,6 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: php
 
     // src/Entity/Product/ProductVariant.php
-
     <?php
 
     declare(strict_types=1);
@@ -262,7 +245,6 @@ Installing Sylius Plus as a plugin to a Sylius application
 .. code-block:: php
 
     // src/Entity/Shipping/Shipment.php
-
     <?php
 
     declare(strict_types=1);
@@ -297,11 +279,17 @@ your application's ``.env`` file:
     WKHTMLTOPDF_PATH=/your-path
     ###< knplabs/knp-snappy-bundle ###
 
-**8.** Install Sylius with Sylius Plus fixtures:
+**8.** Update the database using migrations:
 
 .. code-block:: bash
 
-    bin/console sylius:install --fixture-suite plus
+    bin/console doctrine:migrations:migrate
+
+**9.** Install Sylius with Sylius Plus fixtures:
+
+.. code-block:: bash
+
+    bin/console sylius:install plus
 
 .. tip::
 
@@ -309,15 +297,15 @@ your application's ``.env`` file:
 
     .. code-block:: bash
 
-        bin/console sylius:install --fixture-suite plus -n
+        bin/console sylius:install plus -n
 
-**9.** Copy templates that are overridden by Sylius Plus into ``templates/bundles``:
+**10.** Copy templates that are overridden by Sylius Plus into ``templates/bundles``:
 
 .. code-block:: bash
 
     cp -fr vendor/sylius/plus/src/Resources/templates/bundles/* templates/bundles
 
-**10.** Install JS libraries using Yarn:
+**11.** Install JS libraries using Yarn:
 
 .. code-block:: bash
 
@@ -325,14 +313,14 @@ your application's ``.env`` file:
     yarn build
     bin/console assets:install --ansi
 
-**11.** Rebuild cache for proper display of all translations:
+**12.** Rebuild cache for proper display of all translations:
 
 .. code-block:: bash
 
     bin/console cache:clear
     bin/console cache:warmup
 
-**12.** For more details check the installation guides for all plugins installed as dependencies with Sylius Plus.
+**13.** For more details check the installation guides for all plugins installed as dependencies with Sylius Plus.
 
 * `Sylius/InvoicingPlugin <https://github.com/Sylius/InvoicingPlugin/blob/master/README.md#installation>`_
 * `Sylius/RefundPlugin <https://github.com/Sylius/RefundPlugin/blob/master/README.md#installation>`_

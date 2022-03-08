@@ -17,14 +17,12 @@ use Sylius\Bundle\ResourceBundle\Form\Type\ResourceAutocompleteChoiceType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\DataTransformerInterface;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 final class ForVariantsScopeConfigurationType extends AbstractType
 {
-    private DataTransformerInterface $productVariantsToCodesTransformer;
-
-    public function __construct(DataTransformerInterface $productVariantsToCodesTransformer)
+    public function __construct(private DataTransformerInterface $productVariantsToCodesTransformer)
     {
-        $this->productVariantsToCodesTransformer = $productVariantsToCodesTransformer;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -36,6 +34,9 @@ final class ForVariantsScopeConfigurationType extends AbstractType
             'choice_name' => 'descriptor',
             'choice_value' => 'code',
             'resource' => 'sylius.product_variant',
+            'constraints' => [
+                new NotBlank(['groups' => 'sylius', 'message' => 'sylius.catalog_promotion_scope.for_variants.not_empty']),
+            ],
         ]);
 
         $builder->get('variants')->addModelTransformer($this->productVariantsToCodesTransformer);

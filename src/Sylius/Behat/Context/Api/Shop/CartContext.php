@@ -20,7 +20,6 @@ use Sylius\Behat\Client\Request;
 use Sylius\Behat\Client\ResponseCheckerInterface;
 use Sylius\Behat\Service\SharedStorageInterface;
 use Sylius\Behat\Service\SprintfResponseEscaper;
-use Sylius\Component\Core\Model\ChannelPricingInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Locale\Model\LocaleInterface;
@@ -307,6 +306,7 @@ final class CartContext implements Context
     /**
      * @Then /^my (cart)'s total should be ("[^"]+")$/
      * @Then /^my (cart) total should be ("[^"]+")$/
+     * @Then /^the (cart) total should be ("[^"]+")$/
      */
     public function myCartSTotalShouldBe(string $tokenValue, int $total): void
     {
@@ -397,6 +397,7 @@ final class CartContext implements Context
 
     /**
      * @Then /^I should see(?:| also) "([^"]+)" with discounted unit price ("[^"]+") in my cart$/
+     * @Then /^the product "([^"]+)" should have discounted unit price ("[^"]+") in the cart$/
      */
     public function iShouldSeeProductWithDiscountedUnitPriceInMyCart(string $productName, int $discountedUnitPrice): void
     {
@@ -405,6 +406,24 @@ final class CartContext implements Context
         foreach ($this->responseChecker->getValue($response, 'items') as $item) {
             if ($item['productName'] === $productName) {
                 Assert::same($item['discountedUnitPrice'], $discountedUnitPrice);
+
+                return;
+            }
+        }
+
+        throw new \InvalidArgumentException(sprintf('The product %s does not exist', $productName));
+    }
+
+    /**
+     * @Then /^the product "([^"]+)" should have total price ("[^"]+") in the cart$/
+     */
+    public function theProductShouldHaveTotalPriceInTheCart(string $productName, int $totalPrice): void
+    {
+        $response = $this->cartsClient->getLastResponse();
+
+        foreach ($this->responseChecker->getValue($response, 'items') as $item) {
+            if ($item['productName'] === $productName) {
+                Assert::same($item['total'], $totalPrice);
 
                 return;
             }
@@ -445,7 +464,7 @@ final class CartContext implements Context
         $response = $this->getProductForItem($item);
 
         Assert::true(
-            $this->responseChecker->hasTranslation($response, 'en_US', 'name', $productName),
+            $this->responseChecker->hasValue($response, 'name', $productName),
             SprintfResponseEscaper::provideMessageWithEscapedResponseContent('Name not found.', $response)
         );
     }
@@ -458,7 +477,7 @@ final class CartContext implements Context
         $response = $this->getProductVariantForItem($item);
 
         Assert::true(
-            $this->responseChecker->hasTranslation($response, 'en_US', 'name', $variantName),
+            $this->responseChecker->hasValue($response, 'name', $variantName),
             SprintfResponseEscaper::provideMessageWithEscapedResponseContent('Name not found.', $response)
         );
     }
@@ -501,7 +520,7 @@ final class CartContext implements Context
      */
     public function iShouldSeeWithQuantityInMyCart(string $productName, int $quantity): void
     {
-        $this->checkProductQuantity($this->cartsClient->getLastResponse(), $productName, $quantity);
+        $this->checkProductQuantityByCustomer($this->cartsClient->getLastResponse(), $productName, $quantity);
     }
 
     /**
@@ -521,7 +540,7 @@ final class CartContext implements Context
      */
     public function theAdministratorShouldSeeProductWithQuantityInTheCart(string $productName, int $quantity): void
     {
-        $this->checkProductQuantity($this->ordersAdminClient->getLastResponse(), $productName, $quantity);
+        $this->checkProductQuantityByAdmin($this->ordersAdminClient->getLastResponse(), $productName, $quantity);
     }
 
     /**
@@ -774,27 +793,49 @@ final class CartContext implements Context
         return false;
     }
 
-    private function checkProductQuantity(
-        Response $cartResponse,
-        string $productName,
-        int $quantity
-    ): void {
+    private function checkProductQuantityByAdmin(Response $cartResponse, string $productName, int $quantity): void
+    {
         $items = $this->responseChecker->getValue($cartResponse, 'items');
 
         foreach ($items as $item) {
             $productResponse = $this->getProductForItem($item);
-
             if ($this->responseChecker->hasTranslation($productResponse, 'en_US', 'name', $productName)) {
-                Assert::same(
-                    $item['quantity'],
-                    $quantity,
-                    SprintfResponseEscaper::provideMessageWithEscapedResponseContent(
-                        sprintf('Quantity did not match. Expected %s.', $quantity),
-                        $cartResponse
-                    )
-                );
+                $this->assertItemQuantity($productResponse, $item['quantity'], $quantity);
+
+                return;
+            }
+
+        }
+
+        throw new \InvalidArgumentException('Invalid item data');
+    }
+
+    private function checkProductQuantityByCustomer(Response $cartResponse, string $productName, int $quantity): void
+    {
+        $items = $this->responseChecker->getValue($cartResponse, 'items');
+
+        foreach ($items as $item) {
+            $productResponse = $this->getProductForItem($item);
+            if ($this->responseChecker->hasValue($productResponse, 'name', $productName)) {
+                $this->assertItemQuantity($cartResponse, $item['quantity'], $quantity);
+
+                return;
             }
         }
+
+        throw new \InvalidArgumentException('Invalid item data');
+    }
+
+    private function assertItemQuantity(Response $response, int $gotQuantity, int $expectedQuantity): void
+    {
+        Assert::same(
+            $gotQuantity,
+            $expectedQuantity,
+            SprintfResponseEscaper::provideMessageWithEscapedResponseContent(
+                sprintf('Quantity did not match. Expected %s.', $expectedQuantity),
+                $response
+            )
+        );
     }
 
     private function compareItemSubtotal(string $productName, int $productPrice): void
@@ -820,7 +861,7 @@ final class CartContext implements Context
         foreach ($items as $item) {
             $productResponse = $this->getProductForItem($item);
 
-            if ($this->responseChecker->hasTranslation($productResponse, 'en_US', 'name', $product->getName())) {
+            if ($this->responseChecker->hasValue($productResponse, 'name', $product->getName())) {
                 $variantForItem = $this->getProductVariantForItem($item);
 
                 return $this->responseChecker->getValue($variantForItem, 'price') * $item['quantity'];
@@ -839,7 +880,7 @@ final class CartContext implements Context
 
         foreach ($this->responseChecker->getValue($response, 'items') as $item) {
             if ($item['productName'] === $productName) {
-                Assert::same($item['originalPrice'], $originalPrice);
+                Assert::same($item['originalUnitPrice'], $originalPrice);
 
                 return;
             }

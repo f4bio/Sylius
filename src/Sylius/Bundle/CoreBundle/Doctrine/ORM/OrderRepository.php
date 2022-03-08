@@ -15,7 +15,6 @@ namespace Sylius\Bundle\CoreBundle\Doctrine\ORM;
 
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Mapping;
 use Doctrine\ORM\QueryBuilder;
 use Sylius\Bundle\OrderBundle\Doctrine\ORM\OrderRepository as BaseOrderRepository;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -26,6 +25,7 @@ use Sylius\Component\Core\OrderCheckoutStates;
 use Sylius\Component\Core\OrderPaymentStates;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Model\OrderInterface as BaseOrderInterface;
+use Sylius\Component\User\Model\UserInterface;
 use SyliusLabs\AssociationHydrator\AssociationHydrator;
 
 class OrderRepository extends BaseOrderRepository implements OrderRepositoryInterface
@@ -191,9 +191,11 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
             ->andWhere('o.channel = :channel')
             ->andWhere('o.customer = :customer')
             ->andWhere('o.items IS NOT EMPTY')
+            ->andWhere('o.createdByGuest = :createdByGuest')
             ->setParameter('state', OrderInterface::STATE_CART)
             ->setParameter('channel', $channel)
             ->setParameter('customer', $customer)
+            ->setParameter('createdByGuest', false)
             ->addOrderBy('o.createdAt', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
@@ -311,11 +313,11 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
     {
         return $this->createQueryBuilder('o')
             ->where('o.checkoutState = :checkoutState')
-            ->andWhere('o.paymentState != :paymentState')
+            ->andWhere('o.paymentState = :paymentState')
             ->andWhere('o.state = :orderState')
             ->andWhere('o.checkoutCompletedAt < :terminalDate')
             ->setParameter('checkoutState', OrderCheckoutStates::STATE_COMPLETED)
-            ->setParameter('paymentState', OrderPaymentStates::STATE_PAID)
+            ->setParameter('paymentState', OrderPaymentStates::STATE_AWAITING_PAYMENT)
             ->setParameter('orderState', OrderInterface::STATE_NEW)
             ->setParameter('terminalDate', $terminalDate)
             ->getQuery()
@@ -427,6 +429,20 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
             ->andWhere('o.tokenValue = :tokenValue')
             ->setParameter('state', OrderInterface::STATE_CART)
             ->setParameter('tokenValue', $tokenValue)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+    }
+
+    public function findCartByTokenValueAndChannel(string $tokenValue, ChannelInterface $channel): ?BaseOrderInterface
+    {
+        return $this->createQueryBuilder('o')
+            ->andWhere('o.state = :state')
+            ->andWhere('o.tokenValue = :tokenValue')
+            ->andWhere('o.channel = :channel')
+            ->setParameter('state', OrderInterface::STATE_CART)
+            ->setParameter('tokenValue', $tokenValue)
+            ->setParameter('channel', $channel)
             ->getQuery()
             ->getOneOrNullResult()
         ;

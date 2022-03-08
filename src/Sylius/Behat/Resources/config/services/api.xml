@@ -24,6 +24,11 @@
             <argument>shop</argument>
         </service>
 
+        <service id="sylius.behat.api_platform_client.shop.shipping_methods" class="Sylius\Behat\Client\ApiPlatformClient" parent="sylius.behat.api_platform_client">
+            <argument>shipping-methods</argument>
+            <argument>shop</argument>
+        </service>
+
         <service id="sylius.behat.api_platform_client.administrator" class="Sylius\Behat\Client\ApiPlatformClient" parent="sylius.behat.api_platform_client">
             <argument>administrators</argument>
             <argument>admin</argument>
@@ -41,6 +46,11 @@
 
         <service id="sylius.behat.api_platform_client.shop.channel" class="Sylius\Behat\Client\ApiPlatformClient" parent="sylius.behat.api_platform_client">
             <argument>channels</argument>
+            <argument>shop</argument>
+        </service>
+
+        <service id="sylius.behat.api_platform_client.shop.payment_method" class="Sylius\Behat\Client\ApiPlatformClient" parent="sylius.behat.api_platform_client">
+            <argument>payment-methods</argument>
             <argument>shop</argument>
         </service>
 
@@ -212,6 +222,11 @@
         <service id="sylius.behat.api_platform_client.admin.catalog_promotion" class="Sylius\Behat\Client\ApiPlatformClient" parent="sylius.behat.api_platform_client">
             <argument>catalog-promotions</argument>
             <argument>admin</argument>
+        </service>
+
+        <service id="sylius.behat.api_platform_client.shop.catalog_promotion" class="Sylius\Behat\Client\ApiPlatformClient" parent="sylius.behat.api_platform_client">
+            <argument>catalog-promotions</argument>
+            <argument>shop</argument>
         </service>
 
         <service id="Sylius\Behat\Client\ResponseCheckerInterface" class="Sylius\Behat\Client\ResponseChecker">

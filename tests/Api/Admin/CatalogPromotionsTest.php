@@ -13,9 +13,12 @@ declare(strict_types=1);
 
 namespace Sylius\Tests\Api\Admin;
 
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Calculator\FixedDiscountPriceCalculator;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Calculator\PercentageDiscountPriceCalculator;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForProductScopeVariantChecker;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForTaxonsScopeVariantChecker;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForVariantsScopeVariantChecker;
 use Sylius\Component\Core\Model\CatalogPromotionInterface;
-use Sylius\Component\Core\Model\CatalogPromotionScopeInterface;
-use Sylius\Component\Promotion\Model\CatalogPromotionActionInterface;
 use Sylius\Tests\Api\JsonApiTestCase;
 use Sylius\Tests\Api\Utils\AdminUserLoginTrait;
 use Symfony\Component\HttpFoundation\Response;
@@ -69,7 +72,7 @@ final class CatalogPromotionsTest extends JsonApiTestCase
     /** @test */
     public function it_creates_a_catalog_promotion(): void
     {
-        $this->loadFixturesFromFiles(['authentication/api_administrator.yaml', 'channel.yaml', 'product_variant.yaml']);
+        $this->loadFixturesFromFiles(['authentication/api_administrator.yaml', 'channel.yaml', 'product/product_variant.yaml']);
         $header = $this->getLoggedHeader();
 
         $this->client->request(
@@ -82,13 +85,13 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                 'name' => 'T-Shirts discount',
                 'code' => 'tshirts_discount',
                 'startDate' => '2022-01-01',
-                'endDate' => '2022-02-01',
+                'endDate' => '2022-01-02',
                 'channels' => [
                     '/api/v2/admin/channels/WEB',
                 ],
                 'actions' => [
                     [
-                        'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                        'type' => PercentageDiscountPriceCalculator::TYPE,
                         'configuration' => [
                             'amount' => 0.5
                         ]
@@ -96,7 +99,7 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                 ],
                 'scopes' => [
                     [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                        'type' => InForVariantsScopeVariantChecker::TYPE,
                         'configuration' => [
                             'variants' => [
                                 'MUG'
@@ -109,7 +112,8 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                     'label' => 'T-Shirts discount',
                     'description' => '50% discount on every T-Shirt',
                 ]],
-                "enabled" => true,
+                'enabled' => true,
+                'exclusive' => false,
                 'priority' => 100,
             ], JSON_THROW_ON_ERROR)
         );
@@ -198,7 +202,7 @@ final class CatalogPromotionsTest extends JsonApiTestCase
     /** @test */
     public function it_does_not_create_a_catalog_promotion_with_invalid_scopes(): void
     {
-        $this->loadFixturesFromFiles(['authentication/api_administrator.yaml', 'channel.yaml', 'product_variant.yaml']);
+        $this->loadFixturesFromFiles(['authentication/api_administrator.yaml', 'channel.yaml', 'product/product_variant.yaml']);
         $header = $this->getLoggedHeader();
 
         $this->client->request(
@@ -215,7 +219,7 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                 ],
                 'actions' => [
                     [
-                        'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                        'type' => PercentageDiscountPriceCalculator::TYPE,
                         'configuration' => [
                             'amount' => 0.5
                         ]
@@ -228,41 +232,41 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                             'variants' => ['MUG']
                         ],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                        'type' => InForVariantsScopeVariantChecker::TYPE,
                         'configuration' => [],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                        'type' => InForVariantsScopeVariantChecker::TYPE,
                         'configuration' => [
                             'variants' => []
                         ],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                        'type' => InForVariantsScopeVariantChecker::TYPE,
                         'configuration' => [
                             'variants' => ['invalid_variant']
                         ],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS,
+                        'type' => InForProductScopeVariantChecker::TYPE,
                         'configuration' => [],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS,
+                        'type' => InForProductScopeVariantChecker::TYPE,
                         'configuration' => [
                             'products' => []
                         ],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_PRODUCTS,
+                        'type' => InForProductScopeVariantChecker::TYPE,
                         'configuration' => [
                             'products' => ['invalid_product']
                         ],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_TAXONS,
+                        'type' => InForTaxonsScopeVariantChecker::TYPE,
                         'configuration' => [],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_TAXONS,
+                        'type' => InForTaxonsScopeVariantChecker::TYPE,
                         'configuration' => [
                             'taxons' => []
                         ],
                     ], [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_TAXONS,
+                        'type' => InForTaxonsScopeVariantChecker::TYPE,
                         'configuration' => [
                             'taxons' => ['invalid_taxon']
                         ],
@@ -273,7 +277,8 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                     'label' => 'T-Shirts discount',
                     'description' => '50% discount on every T-Shirt',
                 ]],
-                "enabled" => true
+                'enabled' => true,
+                'exclusive' => false,
             ], JSON_THROW_ON_ERROR)
         );
 
@@ -287,7 +292,7 @@ final class CatalogPromotionsTest extends JsonApiTestCase
     /** @test */
     public function it_does_not_create_a_catalog_promotion_with_invalid_actions(): void
     {
-        $this->loadFixturesFromFiles(['authentication/api_administrator.yaml', 'channel.yaml', 'product_variant.yaml']);
+        $this->loadFixturesFromFiles(['authentication/api_administrator.yaml', 'channel.yaml', 'product/product_variant.yaml']);
         $header = $this->getLoggedHeader();
 
         $this->client->request(
@@ -310,25 +315,51 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                         ]
                     ],
                     [
-                        'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                        'type' => PercentageDiscountPriceCalculator::TYPE,
                         'configuration' => []
                     ],
                     [
-                        'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                        'type' => PercentageDiscountPriceCalculator::TYPE,
                         'configuration' => [
                             'amount' => 1.5
                         ]
                     ],
                     [
-                        'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                        'type' => PercentageDiscountPriceCalculator::TYPE,
                         'configuration' => [
                             'amount' => 'text'
+                        ]
+                    ],
+                    [
+                        'type' => FixedDiscountPriceCalculator::TYPE,
+                        'configuration' => []
+                    ],
+                    [
+                        'type' => FixedDiscountPriceCalculator::TYPE,
+                        'configuration' => [
+                            'WEB' => [],
+                        ]
+                    ],
+                    [
+                        'type' => FixedDiscountPriceCalculator::TYPE,
+                        'configuration' => [
+                            'invalid_channel' => [
+                                'amount' => 1000,
+                            ],
+                        ]
+                    ],
+                    [
+                        'type' => FixedDiscountPriceCalculator::TYPE,
+                        'configuration' => [
+                            'WEB' => [
+                                'amount' => 'text',
+                            ]
                         ]
                     ]
                 ],
                 'scopes' => [
                     [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                        'type' => InForVariantsScopeVariantChecker::TYPE,
                         'configuration' => [
                             'variants' => [
                                 'MUG'
@@ -341,7 +372,8 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                     'label' => 'T-Shirts discount',
                     'description' => '50% discount on every T-Shirt',
                 ]],
-                "enabled" => true
+                'enabled' => true,
+                'exclusive' => false,
             ], JSON_THROW_ON_ERROR)
         );
 
@@ -369,7 +401,7 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                 'code' => 'new_code',
                 'actions' => [
                     [
-                        'type' => CatalogPromotionActionInterface::TYPE_PERCENTAGE_DISCOUNT,
+                        'type' => PercentageDiscountPriceCalculator::TYPE,
                         'configuration' => [
                             'amount' => 0.4
                         ]
@@ -377,7 +409,7 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                 ],
                 'scopes' => [
                     [
-                        'type' => CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS,
+                        'type' => InForVariantsScopeVariantChecker::TYPE,
                         'configuration' => [
                             'variants' => [
                                 'MUG'
@@ -392,7 +424,8 @@ final class CatalogPromotionsTest extends JsonApiTestCase
                     '@id' => sprintf('/api/v2/admin/catalog-promotion-translations/%s', $catalogPromotion->getTranslation('en_US')->getId()),
                     'label' => 'T-Shirts discount',
                 ]],
-                "enabled" => true,
+                'enabled' => true,
+                'exclusive' => false,
                 'priority' => 1000,
             ], JSON_THROW_ON_ERROR)
         );
@@ -406,7 +439,7 @@ final class CatalogPromotionsTest extends JsonApiTestCase
 
     private function loadFixturesAndGetCatalogPromotion(): CatalogPromotionInterface
     {
-        $fixtures = $this->loadFixturesFromFiles(['authentication/api_administrator.yaml', 'channel.yaml', 'product_variant.yaml', 'catalog_promotion.yaml']);
+        $fixtures = $this->loadFixturesFromFiles(['authentication/api_administrator.yaml', 'channel.yaml', 'product/product_variant.yaml', 'catalog_promotion.yaml']);
 
         /** @var CatalogPromotionInterface $catalogPromotion */
         $catalogPromotion = $fixtures['catalog_promotion'];

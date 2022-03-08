@@ -30,5 +30,9 @@ final class SyliusApiExtension extends Extension
         $container->setParameter('sylius_api.product_image_prefix', $config['product_image_prefix']);
 
         $loader->load('services.xml');
+
+        if ($container->hasParameter('api_platform.enable_swagger_ui') && $container->getParameter('api_platform.enable_swagger_ui')) {
+            $loader->load('integrations/swagger.xml');
+        }
     }
 }

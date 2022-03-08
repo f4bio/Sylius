@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sylius\Component\Core\Provider;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Sylius\Component\Core\Calculator\ProductVariantPriceCalculatorInterface;
 use Sylius\Component\Core\Calculator\ProductVariantPricesCalculatorInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -22,11 +23,8 @@ use Sylius\Component\Product\Model\ProductOptionValueInterface;
 
 final class ProductVariantsPricesProvider implements ProductVariantsPricesProviderInterface
 {
-    private ProductVariantPriceCalculatorInterface $productVariantPriceCalculator;
-
-    public function __construct(ProductVariantPriceCalculatorInterface $productVariantPriceCalculator)
+    public function __construct(private ProductVariantPriceCalculatorInterface $productVariantPriceCalculator)
     {
-        $this->productVariantPriceCalculator = $productVariantPriceCalculator;
     }
 
     public function provideVariantsPrices(ProductInterface $product, ChannelInterface $channel): array
@@ -61,9 +59,10 @@ final class ProductVariantsPricesProvider implements ProductVariantsPricesProvid
             }
         }
 
+        /** @var ArrayCollection $appliedPromotions */
         $appliedPromotions = $variant->getAppliedPromotionsForChannel($channel);
-        if (!empty($appliedPromotions)) {
-            $optionMap['applied_promotions'] = $appliedPromotions;
+        if (!$appliedPromotions->isEmpty()) {
+            $optionMap['applied_promotions'] = $appliedPromotions->toArray();
         }
 
         return $optionMap;

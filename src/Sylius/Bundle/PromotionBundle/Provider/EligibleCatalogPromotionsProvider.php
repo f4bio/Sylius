@@ -13,21 +13,18 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\PromotionBundle\Provider;
 
-use Sylius\Bundle\PromotionBundle\Criteria\CriteriaInterface;
 use Sylius\Component\Promotion\Repository\CatalogPromotionRepositoryInterface;
-use Sylius\Component\Resource\Repository\RepositoryInterface;
 
 final class EligibleCatalogPromotionsProvider implements EligibleCatalogPromotionsProviderInterface
 {
-    private CatalogPromotionRepositoryInterface $catalogPromotionRepository;
-
-    public function __construct(CatalogPromotionRepositoryInterface $catalogPromotionRepository)
-    {
-        $this->catalogPromotionRepository = $catalogPromotionRepository;
+    public function __construct(
+        private CatalogPromotionRepositoryInterface $catalogPromotionRepository,
+        private iterable $defaultCriteria = []
+    ) {
     }
 
-    public function provide(iterable $criteria = []): array
+    public function provide(): array
     {
-        return $this->catalogPromotionRepository->findByCriteria($criteria);
+        return $this->catalogPromotionRepository->findByCriteria($this->defaultCriteria);
     }
 }

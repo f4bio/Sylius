@@ -60,5 +60,10 @@ interface ProductVariantRepositoryInterface extends RepositoryInterface
     /**
      * @return array|ProductVariantInterface[]
      */
-    public function findByPhrase(string $phrase, string $locale): array;
+    public function findByPhrase(string $phrase, string $locale, ?int $limit = null): array;
+
+    /**
+     * @return array|string[]
+     */
+    public function getCodesOfAllVariants(): array;
 }

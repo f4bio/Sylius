@@ -8,13 +8,14 @@
     "startDate": null,
     "endDate": null,
     "priority": 0,
-    "state": "inactive",
+    "state": @string@,
     "channels": [
         "\/api\/v2\/admin\/channels\/WEB"
     ],
     "scopes": [],
     "actions": [],
     "enabled": @boolean@,
+    "exclusive": false,
     "translations": {
         "en_US": {
             "@id": "\/api\/v2\/admin\/catalog-promotion-translations\/@integer@",

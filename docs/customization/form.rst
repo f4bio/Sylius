@@ -93,6 +93,9 @@ As a result you will get the ``Sylius\Bundle\CustomerBundle\Form\Type\CustomerPr
 
 **3.** After creating your class, register this extension as a service in the ``config/services.yaml``:
 
+.. caution::
+    Remember! Service registration is not needed if you have autoconfiguration enabled in your services container.
+
 .. code-block:: yaml
 
     services:
@@ -108,7 +111,7 @@ As a result you will get the ``Sylius\Bundle\CustomerBundle\Form\Type\CustomerPr
 In our case you will need to copy the original template from ``vendor/sylius/sylius/src/Sylius/Bundle/ShopBundle/Resources/views/Account/profileUpdate.html.twig``
 to ``templates/bundles/SyliusShopBundle/Account/`` and add the fields inside the copy.
 
-.. code-block:: html
+.. code-block:: twig
 
     {{ form_row(form.phoneNumber) }}
     {{ form_row(form.subscribedToNewsletter) }}

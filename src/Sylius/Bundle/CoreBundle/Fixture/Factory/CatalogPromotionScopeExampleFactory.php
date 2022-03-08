@@ -13,20 +13,17 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\CoreBundle\Fixture\Factory;
 
-use Sylius\Component\Core\Model\CatalogPromotionScopeInterface;
+use Sylius\Bundle\CoreBundle\CatalogPromotion\Checker\InForVariantsScopeVariantChecker;
+use Sylius\Component\Promotion\Model\CatalogPromotionScopeInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class CatalogPromotionScopeExampleFactory extends AbstractExampleFactory implements ExampleFactoryInterface
 {
-    private FactoryInterface $catalogPromotionScopeFactory;
-
     private OptionsResolver $optionsResolver;
 
-    public function __construct(FactoryInterface $catalogPromotionScopeFactory)
+    public function __construct(private FactoryInterface $catalogPromotionScopeFactory)
     {
-        $this->catalogPromotionScopeFactory = $catalogPromotionScopeFactory;
-
         $this->optionsResolver = new OptionsResolver();
 
         $this->configureOptions($this->optionsResolver);
@@ -47,7 +44,7 @@ final class CatalogPromotionScopeExampleFactory extends AbstractExampleFactory i
     protected function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefault('type', CatalogPromotionScopeInterface::TYPE_FOR_VARIANTS)
+            ->setDefault('type', InForVariantsScopeVariantChecker::TYPE)
             ->setAllowedTypes('type', 'string')
             ->setDefault('configuration', [])
             ->setAllowedTypes('configuration', 'array')

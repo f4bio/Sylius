@@ -23,11 +23,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class CustomerGroupChoiceType extends AbstractType
 {
-    private RepositoryInterface $customerGroupRepository;
-
-    public function __construct(RepositoryInterface $customerGroupRepository)
+    public function __construct(private RepositoryInterface $customerGroupRepository)
     {
-        $this->customerGroupRepository = $customerGroupRepository;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -40,9 +37,7 @@ final class CustomerGroupChoiceType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'choices' => function (Options $options): array {
-                return $this->customerGroupRepository->findAll();
-            },
+            'choices' => fn(Options $options): array => $this->customerGroupRepository->findAll(),
             'choice_value' => 'code',
             'choice_label' => 'name',
             'choice_translation_domain' => false,
